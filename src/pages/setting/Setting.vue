@@ -31,7 +31,7 @@ import Textarea from "@/components/base/Textarea.vue";
 import SettingItem from "@/pages/setting/SettingItem.vue";
 import {get, set} from "idb-keyval";
 import {useRuntimeStore} from "@/stores/runtime.ts";
-import {useAuthStore} from "@/stores/auth.ts";
+import {useUserStore} from "@/stores/auth.ts";
 
 const emit = defineEmits<{
   toggleDisabledDialogEscKey: [val: boolean]
@@ -41,7 +41,7 @@ const tabIndex = $ref(0)
 const settingStore = useSettingStore()
 const runtimeStore = useRuntimeStore()
 const store = useBaseStore()
-const authStore = useAuthStore()
+const userStore = useUserStore()
 
 //@ts-ignore
 const gitLastCommitHash = ref(LATEST_COMMIT_HASH);
@@ -793,22 +793,22 @@ function importOldData() {
           <h1>Type Words</h1>
 
           <!-- 用户信息部分 -->
-          <div v-if="authStore.isLoggedIn && authStore.user" class="user-info-section mb-6">
+          <div v-if="userStore.isLoggedIn && userStore.user" class="user-info-section mb-6">
             <div class="user-avatar mb-4">
-              <img v-if="authStore.user.avatar" :src="authStore.user.avatar" alt="头像" class="avatar-img"/>
+              <img v-if="userStore.user.avatar" :src="userStore.user.avatar" alt="头像" class="avatar-img"/>
               <div v-else class="avatar-placeholder">
-                {{ authStore.user.nickname?.charAt(0) || 'U' }}
+                {{ userStore.user.nickname?.charAt(0) || 'U' }}
               </div>
             </div>
-            <h3 class="mb-2">{{ authStore.user.nickname || '用户' }}</h3>
-            <p v-if="authStore.user.email" class="text-sm color-gray mb-1">{{ authStore.user.email }}</p>
-            <p v-if="authStore.user.phone" class="text-sm color-gray">{{ authStore.user.phone }}</p>
+            <h3 class="mb-2">{{ userStore.user.nickname || '用户' }}</h3>
+            <p v-if="userStore.user.email" class="text-sm color-gray mb-1">{{ userStore.user.email }}</p>
+            <p v-if="userStore.user.phone" class="text-sm color-gray">{{ userStore.user.phone }}</p>
 
             <BaseButton
-              @click="authStore.logout"
+              @click="userStore.logout"
               type="info"
               class="mt-4"
-              :loading="authStore.isLoading"
+              :loading="userStore.isLoading"
             >
               退出登录
             </BaseButton>

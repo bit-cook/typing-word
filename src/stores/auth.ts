@@ -1,20 +1,12 @@
-import {defineStore} from 'pinia'
-import {computed, ref} from 'vue'
-import {getUserInfo} from '@/apis/user.ts'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+import { getUserInfo, User } from '@/apis/user.ts'
 import Toast from '@/components/base/toast/Toast.ts'
 import router from '@/router.ts'
-import {AppEnv} from "@/config/env.ts";
+import { AppEnv } from "@/config/env.ts";
 
-export interface User {
-  id: string
-  email?: string
-  phone?: string
-  username?: string
-  avatar?: string,
-  hasPwd?: boolean
-}
 
-export const useAuthStore = defineStore('auth', () => {
+export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
   const isLogin = computed(() => AppEnv.IS_LOGIN)
 

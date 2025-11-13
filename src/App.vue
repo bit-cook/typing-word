@@ -12,12 +12,12 @@ import { useRoute } from "vue-router";
 import { DictId } from "@/types/types.ts";
 import { APP_VERSION, CAN_REQUEST, LOCAL_FILE_KEY, SAVE_DICT_KEY, SAVE_SETTING_KEY } from "@/config/env.ts";
 import { syncSetting } from "@/apis";
-import {useAuthStore} from "@/stores/auth.ts";
+import {useUserStore} from "@/stores/auth.ts";
 
 const store = useBaseStore()
 const runtimeStore = useRuntimeStore()
 const settingStore = useSettingStore()
-const authStore = useAuthStore()
+const userStore = useUserStore()
 const {setTheme} = useTheme()
 
 let lastAudioFileIdList = []
@@ -59,10 +59,10 @@ watch(settingStore.$state, (n) => {
 })
 
 async function init() {
+  await userStore.init()
   await store.init()
   await settingStore.init()
   store.load = true
-  await authStore.init()
 
   setTheme(settingStore.theme)
 

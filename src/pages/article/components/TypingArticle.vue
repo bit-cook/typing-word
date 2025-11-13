@@ -636,7 +636,7 @@ const currentPractice = inject('currentPractice', [])
         <span :class="i === currentPractice.length-1 ? 'color-red':'color-gray'"
         >{{
             i === currentPractice.length - 1 ? '当前' : i + 1
-          }}.&nbsp;&nbsp;{{ _dateFormat(item.startDate, 'YYYY/MM/DD HH:mm') }}</span>
+          }}.&nbsp;&nbsp;{{ _dateFormat(item.startDate) }}</span>
         <span>{{ msToHourMinute(item.spend) }}</span>
       </div>
     </div>

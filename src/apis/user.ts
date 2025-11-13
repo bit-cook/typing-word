@@ -1,5 +1,5 @@
 import http from '@/utils/http.ts'
-import {CodeType} from "@/types/types.ts";
+import { CodeType } from "@/types/types.ts";
 
 // 用户登录接口
 export interface LoginParams {
@@ -10,16 +10,24 @@ export interface LoginParams {
   type: 'code' | 'pwd'
 }
 
-export interface LoginResponse {
-  token: string
-  user: {
-    id: string
-    email?: string
-    phone?: string
-    nickname?: string
-    avatar?: string
+export interface User {
+  id: string
+  email?: string
+  phone?: string
+  username?: string
+  avatar?: string,
+  hasPwd?: boolean,
+  member: {
+    level: number,
+    levelDesc: string,
+    active: boolean,
+    endTime: number,
+    autoRenew: boolean,
+    payMethod: number,
+    payMethodDesc: string,
   }
 }
+
 
 // 用户注册接口
 export interface RegisterParams {
@@ -59,7 +67,7 @@ export interface WechatLoginParams {
 }
 
 export function loginApi(params: LoginParams) {
-  return http<LoginResponse>('user/login', params, null, 'post')
+  return http<User>('user/login', params, null, 'post')
 }
 
 export function registerApi(params: RegisterParams) {
@@ -75,7 +83,7 @@ export function resetPasswordApi(params: ResetPasswordParams) {
 }
 
 export function wechatLogin(params: WechatLoginParams) {
-  return http<LoginResponse>('user/wechatLogin', params, null, 'post')
+  return http<User>('user/wechatLogin', params, null, 'post')
 }
 
 export function refreshToken() {
@@ -84,7 +92,7 @@ export function refreshToken() {
 
 // 获取用户信息
 export function getUserInfo() {
-  return http<LoginResponse['user']>('user/userInfo', null, null, 'get')
+  return http<User>('user/userInfo', null, null, 'get')
 }
 
 // 设置密码
