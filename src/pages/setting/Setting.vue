@@ -10,7 +10,7 @@ import VolumeIcon from "@/components/icon/VolumeIcon.vue";
 import {useBaseStore} from "@/stores/base.ts";
 import {saveAs} from "file-saver";
 import {
-  APP_NAME, APP_VERSION,
+  APP_NAME, APP_VERSION, EMAIL,
   EXPORT_DATA_KEY, GITHUB,
   LOCAL_FILE_KEY,
   Origin,
@@ -824,7 +824,7 @@ function importOldData() {
             反馈：<a :href="`${GITHUB}/issues`" target="_blank">{{ GITHUB }}/issues</a>
           </p>
           <p>
-            作者邮箱：<a href="mailto:zyronon@163.com">zyronon@163.com</a>
+            作者邮箱：<a :href="`mailto:${EMAIL}`">{{ EMAIL }}</a>
           </p>
           <div class="text-md color-gray mt-10">
             Build {{ gitLastCommitHash }}

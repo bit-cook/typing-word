@@ -46,7 +46,6 @@ const validate = (rules, isBlur = false) => {
     if (rule.validator) {
       try {
         rule.validator(rule, val)
-        return true
       } catch (e) {
         error = e.message
         return false

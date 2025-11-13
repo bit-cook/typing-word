@@ -1,5 +1,5 @@
 import http from '@/utils/http.ts'
-import { CodeType } from "@/types/types.ts";
+import {CodeType} from "@/types/types.ts";
 
 // 用户登录接口
 export interface LoginParams {
@@ -88,6 +88,21 @@ export function getUserInfo() {
 }
 
 // 设置密码
-export function setPassword(password: string) {
-  return http('user/setPassword', {password}, null, 'post')
+export function setPassword(data) {
+  return http('user/setPassword', data, null, 'post')
+}
+
+// 修改邮箱
+export function changeEmailApi(data) {
+  return http('user/changeEmail', data, null, 'post')
+}
+
+// 修改手机号
+export function changePhoneApi(data) {
+  return http('user/changePhone', data, null, 'post')
+}
+
+// 修改用户信息
+export function updateUserInfoApi(data) {
+  return http('user/updateUserInfo', data, null, 'post')
 }

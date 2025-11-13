@@ -9,8 +9,9 @@ export interface User {
   id: string
   email?: string
   phone?: string
-  nickname?: string
-  avatar?: string
+  username?: string
+  avatar?: string,
+  hasPwd?: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -37,15 +38,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // 登出
-  const logout = async () => {
+  function logout() {
     clearToken()
-    Toast.success('已退出登录')
+    // Toast.success('已退出登录')
     //这行会引起hrm失效
     // router.push('/')
   }
 
   // 获取用户信息
-  const fetchUserInfo = async () => {
+  async function fetchUserInfo() {
     try {
       const res = await getUserInfo()
       if (res.success) {
@@ -61,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
 
 
   // 初始化用户状态
-  const init = async () => {
+  async function init() {
     if (AppEnv.CAN_REQUEST) {
       const success = await fetchUserInfo()
       if (!success) {

@@ -235,4 +235,7 @@ export enum CodeType {
   Login = 0,
   Register = 1,
   ResetPwd = 2,
+  ChangeEmail = 3,
+  ChangePhoneNew = 4,
+  ChangePhoneOld = 5
 }

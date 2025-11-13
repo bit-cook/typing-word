@@ -6,7 +6,7 @@ import BaseButton from "@/components/BaseButton.vue";
 import {APP_NAME} from "@/config/env.ts";
 import {useAuthStore} from "@/stores/auth.ts";
 import {loginApi, LoginParams, registerApi, resetPasswordApi, sendCode} from "@/apis/user.ts";
-import {validateEmail, validatePhone} from "@/utils/validation.ts";
+import {accountRules, codeRules, passwordRules, phoneRules, validateEmail, validatePhone} from "@/utils/validation.ts";
 import Toast from "@/components/base/toast/Toast.ts";
 import FormItem from "@/components/base/form/FormItem.vue";
 import Form from "@/components/base/form/Form.vue";
@@ -15,6 +15,7 @@ import {FormInstance} from "@/components/base/form/types.ts";
 import {PASSWORD_CONFIG, PHONE_CONFIG} from "@/config/auth.ts";
 import {CodeType} from "@/types/types.ts";
 import router from "@/router.ts";
+import Code from "@/pages/user/Code.vue";
 
 // 状态管理
 const authStore = useAuthStore()
@@ -33,40 +34,6 @@ let qrStatus = $ref<'idle' | 'scanned' | 'expired' | 'cancelled'>('idle')
 let qrExpireTimer: ReturnType<typeof setTimeout> | null = null
 let qrCheckInterval: ReturnType<typeof setInterval> | null = null
 const QR_EXPIRE_TIME = 5 * 60 * 1000 // 5分钟过期
-
-const codeRules = [
-  {required: true, message: '请输入验证码', trigger: 'blur'},
-  {min: PHONE_CONFIG.codeLength, message: `请输入 ${PHONE_CONFIG.codeLength} 位验证码`, trigger: 'blur'},
-]
-const accountRules = [
-  {required: true, message: '请输入手机号/邮箱地址', trigger: 'blur'},
-  {
-    validator: (rule: any, value: any) => {
-      if (!validatePhone(value) && !validateEmail(value)) {
-        throw new Error('请输入有效的手机号或邮箱地址')
-      }
-    }, trigger: 'blur'
-  },
-]
-const phoneRules = [
-  {required: true, message: '请输入手机号', trigger: 'blur'},
-  {
-    validator: (rule: any, value: any) => {
-      if (!validatePhone(value)) {
-        throw new Error('请输入有效的手机号')
-      }
-    }, trigger: 'blur'
-  },
-]
-const passwordRules = [
-  {required: true, message: '请输入密码', trigger: 'blur'},
-  {
-    min: PASSWORD_CONFIG.minLength,
-    max: PASSWORD_CONFIG.maxLength,
-    message: `密码长度为 ${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位`,
-    trigger: 'blur'
-  },
-]
 
 
 let phoneLoginForm = $ref({phone: '', code: ''})
@@ -178,18 +145,10 @@ async function handleLogin() {
       let data = {}
       //手机号登录
       if (loginType === 'code') {
-        data = {
-          phone: phoneLoginForm.phone,
-          code: phoneLoginForm.code,
-          type: 'code'
-        }
+        data = {...phoneLoginForm, type: 'code'}
       } else {
         //密码登录
-        data = {
-          account: loginForm2.account,
-          password: loginForm2.password,
-          type: 'pwd'
-        }
+        data = {...loginForm2, type: 'pwd'}
       }
       let res = await loginApi(data as LoginParams)
       if (res.success) {
@@ -215,11 +174,7 @@ async function handleRegister() {
     if (!valid) return
     try {
       loading = true
-      let res = await registerApi({
-        account: registerForm.account,
-        password: registerForm.password,
-        code: registerForm.code,
-      })
+      let res = await registerApi(registerForm)
       if (res.success) {
         authStore.setToken(res.data.token)
         authStore.setUser(res.data.user)
@@ -243,11 +198,7 @@ async function handleForgotPassword() {
     if (!valid) return
     try {
       loading = true
-      const res = await resetPasswordApi({
-        account: forgotForm.account,
-        code: forgotForm.code,
-        newPassword: forgotForm.newPassword
-      })
+      const res = await resetPasswordApi(forgotForm)
       if (res.success) {
         Toast.success('密码重置成功，请重新登录')
         switchMode('login')
@@ -405,6 +356,8 @@ onBeforeUnmount(() => {
               <FormItem prop="phone">
                 <BaseInput v-model="phoneLoginForm.phone"
                            type="tel"
+                           name="username"
+                           autocomplete="tel"
                            size="large"
                            placeholder="请输入手机号"
                 />
@@ -413,20 +366,14 @@ onBeforeUnmount(() => {
                 <div class="flex gap-2">
                   <BaseInput
                     v-model="phoneLoginForm.code"
-                    type="text"
+                    type="code"
                     size="large"
                     :max-length="PHONE_CONFIG.codeLength"
                     placeholder="请输入验证码"
                   />
-                  <BaseButton
-                    @click="sendVerificationCode(phoneLoginForm.phone, CodeType.Login,'phone')"
-                    :disabled="isSendingCode || codeCountdown > 0"
-                    type="info"
-                    size="large"
-                    style="border: 1px solid var(--color-input-border)"
-                  >
-                    {{ codeCountdown > 0 ? `${codeCountdown}s` : (isSendingCode ? '发送中' : '发送验证码') }}
-                  </BaseButton>
+                  <Code :validate-field="() => phoneLoginFormRef.validateField('phone')"
+                        :type="CodeType.Login"
+                        :val="phoneLoginForm.phone"/>
                 </div>
               </FormItem>
             </Form>
@@ -439,7 +386,9 @@ onBeforeUnmount(() => {
               :model="loginForm2">
               <FormItem prop="account">
                 <BaseInput v-model="loginForm2.account"
-                           type="text"
+                           type="email"
+                           name="username"
+                           autocomplete="email"
                            size="large"
                            placeholder="请输入手机号/邮箱地址"
                 />
@@ -449,6 +398,8 @@ onBeforeUnmount(() => {
                   <BaseInput
                     v-model="loginForm2.password"
                     type="password"
+                    name="password"
+                    autocomplete="current-password"
                     size="large"
                     placeholder="请输入密码"
                   />
@@ -487,6 +438,8 @@ onBeforeUnmount(() => {
                 <BaseInput
                   v-model="registerForm.account"
                   type="tel"
+                  name="username"
+                  autocomplete="username"
                   size="large"
                   placeholder="请输入手机号/邮箱地址"
                 />
@@ -495,26 +448,22 @@ onBeforeUnmount(() => {
                 <div class="flex gap-2">
                   <BaseInput
                     v-model="registerForm.code"
-                    type="text"
+                    type="code"
                     size="large"
                     placeholder="请输入验证码"
                     :max-length="PHONE_CONFIG.codeLength"
                   />
-                  <BaseButton
-                    @click="sendVerificationCode(registerForm.account, CodeType.Register,'phone')"
-                    :disabled="isSendingCode || codeCountdown > 0"
-                    type="info"
-                    size="large"
-                    style="border: 1px solid var(--color-input-border)"
-                  >
-                    {{ codeCountdown > 0 ? `${codeCountdown}s` : (isSendingCode ? '发送中' : '获取验证码') }}
-                  </BaseButton>
+                  <Code :validate-field="() => registerFormRef.validateField('account')"
+                        :type="CodeType.Register"
+                        :val="registerForm.account"/>
                 </div>
               </FormItem>
               <FormItem prop="password">
                 <BaseInput
                   v-model="registerForm.password"
                   type="password"
+                  name="password"
+                  autocomplete="current-password"
                   size="large"
                   :placeholder="`请设置密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
                 />
@@ -523,6 +472,8 @@ onBeforeUnmount(() => {
                 <BaseInput
                   v-model="registerForm.confirmPassword"
                   type="password"
+                  name="password"
+                  autocomplete="new-password"
                   size="large"
                   placeholder="请再次输入密码"
                 />
@@ -557,6 +508,8 @@ onBeforeUnmount(() => {
                 <BaseInput
                   v-model="forgotForm.account"
                   type="tel"
+                  name="username"
+                  autocomplete="username"
                   size="large"
                   placeholder="请输入手机号/邮箱地址"
                 />
@@ -565,26 +518,22 @@ onBeforeUnmount(() => {
                 <div class="flex gap-2">
                   <BaseInput
                     v-model="forgotForm.code"
-                    type="text"
+                    type="code"
                     size="large"
                     placeholder="请输入验证码"
                     :max-length="PHONE_CONFIG.codeLength"
                   />
-                  <BaseButton
-                    @click="sendVerificationCode(forgotForm.account, CodeType.ResetPwd,'account')"
-                    :disabled="isSendingCode || codeCountdown > 0"
-                    type="info"
-                    size="large"
-                    style="border: 1px solid var(--color-input-border)"
-                  >
-                    {{ codeCountdown > 0 ? `${codeCountdown}s` : (isSendingCode ? '发送中' : '获取验证码') }}
-                  </BaseButton>
+                  <Code :validate-field="() => forgotFormRef.validateField('account')"
+                        :type="CodeType.ResetPwd"
+                        :val="forgotForm.account"/>
                 </div>
               </FormItem>
               <FormItem prop="newPassword">
                 <BaseInput
                   v-model="forgotForm.newPassword"
                   type="password"
+                  name="password"
+                  autocomplete="new-password"
                   size="large"
                   :placeholder="`请输入新密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
                 />
@@ -593,6 +542,8 @@ onBeforeUnmount(() => {
                 <BaseInput
                   v-model="forgotForm.confirmPassword"
                   type="password"
+                  name="password"
+                  autocomplete="new-password"
                   size="large"
                   placeholder="请再次输入新密码"
                 />

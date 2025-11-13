@@ -106,6 +106,15 @@ const vFocus = {
        ref="inputEl"
        :class="{ 'is-disabled': disabled, 'error': props.error, focus, [`base-input--${size}`]: true }">
     <slot name="subfix"></slot>
+    <!-- PreIcon slot -->
+    <div v-if="$slots.preIcon" class="pre-icon">
+      <slot name="preIcon"></slot>
+    </div>
+    <IconFluentLockClosed20Regular class="pre-icon" v-if="type === 'password'"/>
+    <IconFluentMail20Regular class="pre-icon" v-if="type === 'email'"/>
+    <IconFluentPhone20Regular class="pre-icon" v-if="type === 'tel'"/>
+    <IconFluentNumberSymbol20Regular class="pre-icon" v-if="type === 'code'"/>
+
     <input
       v-bind="attrs"
       :type="inputType"
@@ -193,6 +202,24 @@ const vFocus = {
   &:disabled {
     background-color: #f5f5f5;
     cursor: not-allowed;
+  }
+
+  // PreIcon styling
+  &.has-preicon {
+    .inner {
+      padding-left: 2rem;
+    }
+  }
+
+  .pre-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-input-color);
+    opacity: 0.6;
+    z-index: 1;
+    pointer-events: none;
+    margin-right: 0.2rem;
   }
 
   .inner {
