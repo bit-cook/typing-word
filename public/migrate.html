@@ -1,30 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>TypeWords 数据迁移</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-
-        pre {
-            background: #f7f7f7;
-            padding: 10px;
-            border-radius: 4px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>TypeWords 数据迁移（旧域名）</title>
 </head>
 <body>
-<h2>TypeWords 数据迁移（旧域名）</h2>
-<p>等待新域名发送迁移指令 ...</p>
+<h2>等待新域名发送迁移指令...</h2>
 <pre id="log"></pre>
 
 <script>
@@ -33,153 +14,65 @@
     document.getElementById('log').textContent += msg + "\n";
   }
 
-  let dbReadyPromise = null;
-  let name = 'keyval-store';
-  let keys = [
-    'type-words-app-version',
-    'typing-word-dict',
-    'typing-word-setting',
-    'typing-word-files'
-  ]
-
-  function openDB(dbName, keys) {
-    if (dbReadyPromise) return dbReadyPromise;
-
-    dbReadyPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbName, 1);
-
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-
-        keys.forEach((name) => {
-          if (!db.objectStoreNames.contains(name)) {
-            db.createObjectStore(name);
-          }
-        });
+  // 1️⃣ 先动态加载 idb-keyval
+  function loadIDBKeyval() {
+    return new Promise((resolve) => {
+      let script = document.createElement("script");
+      script.src = 'https://cdn.jsdelivr.net/npm/idb-keyval@6.2.2/dist/umd.js';
+      script.onload = function () {
+        log("idb-keyval 加载完成");
+        resolve(window.idbKeyval);
       };
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-
-    return dbReadyPromise;
-  }
-
-  openDB(name, keys)
-
-  // --- localStorage 读取 ---
-  function readLocalStorageKeys(keys) {
-    const out = {};
-    keys.forEach(k => {
-      out[k] = localStorage.getItem(k);
-    });
-    return out;
-  }
-
-  // --- IndexedDB（兼容 idb-keyval）读取 ---
-  function readIndexedDBCompatible(dbName, keys) {
-    return new Promise(async (resolve) => {
-      const db = await openDB(dbName, keys);
-      const stores = Array.from(db.objectStoreNames);
-
-      if (stores.length === 0) {
-        db.close();
-        tryOpenKeyvalDefault();
-        return;
-      }
-
-      if (stores.length === 1 && stores[0] === 'keyval') {
-        readFromKeyvalDB(db).then(result => {
-          db.close();
-          resolve(result);
-        });
-      } else {
-        readFromMultipleStores(db, stores).then(result => {
-          db.close();
-          resolve(result);
-        });
-      }
-
-      function tryOpenKeyvalDefault() {
-        const req = indexedDB.open('keyval');
-        req.onerror = () => resolve({indexedDB: {}, reason: 'no-db'});
-        req.onsuccess = function () {
-          const db2 = req.result;
-          readFromKeyvalDB(db2).then(result => {
-            db2.close();
-            resolve(result);
-          });
-        };
-      }
-
-      function readFromKeyvalDB(db) {
-        return new Promise((res) => {
-          const tx = db.transaction('keyval', 'readonly');
-          const store = tx.objectStore('keyval');
-
-          const out = {};
-          let finished = 0;
-          keys.forEach(k => {
-            const r = store.get(k);
-            r.onsuccess = () => {
-              out[k] = r.result ?? null;
-              if (++finished === keys.length) res({indexedDB: out});
-            };
-            r.onerror = () => {
-              out[k] = null;
-              if (++finished === keys.length) res({indexedDB: out});
-            };
-          });
-        });
-      }
-
-      function readFromMultipleStores(db, stores) {
-        return new Promise(res => {
-          const result = {};
-          let count = 0;
-          stores.forEach(storeName => {
-            try {
-              const tx = db.transaction(storeName, 'readonly');
-              const store = tx.objectStore(storeName);
-              const req = store.getAll();
-
-              req.onsuccess = () => {
-                result[storeName] = req.result;
-                if (++count === stores.length) res({indexedDB: result});
-              };
-              req.onerror = () => {
-                result[storeName] = [];
-                if (++count === stores.length) res({indexedDB: result});
-              };
-            } catch {
-              result[storeName] = [];
-              if (++count === stores.length) res({indexedDB: result});
-            }
-          });
-        });
-      }
+      document.head.appendChild(script);
     });
   }
 
-  async function readAllStorageForMigration() {
-    const local = readLocalStorageKeys(['PracticeSaveWord', 'PracticeSaveArticle']);
-    const indexed = await readIndexedDBCompatible(name, keys);
-    return {localStorage: local, indexedDB: indexed.indexedDB ?? {}};
-  }
+  // 2️⃣ 读取 IndexedDB
+  async function readAllStorageForMigration(db) {
+    // localStorage 数据
+    const localStorageData = {
+      PracticeSaveWord: localStorage.getItem('PracticeSaveWord'),
+      PracticeSaveArticle: localStorage.getItem('PracticeSaveArticle')
+    };
 
-  // =====================
-  // 🔥 自动监听迁移指令
-  // =====================
-  window.addEventListener('message', async (event) => {
-    if (event.data?.type === 'REQUEST_MIGRATION_DATA') {
-      log('收到迁移指令，开始读取本地数据...');
-      const data = await readAllStorageForMigration();
-      log('读取完成，开始发送数据到新域名');
+    // IndexedDB 数据，key 对应你的老项目
+    const keys = [
+      'type-words-app-version',
+      'typing-word-dict',
+      'typing-word-setting',
+      'typing-word-files'
+    ];
 
-      event.source.postMessage({type: 'MIGRATE_DATA', payload: data}, event.origin);
-
-      log('已发送迁移数据');
+    const indexedDBData = {};
+    for (let key of keys) {
+      indexedDBData[key] = await db.get(key);
     }
+
+    return {
+      localStorage: localStorageData,
+      indexedDB: indexedDBData
+    };
+  }
+
+  // 3️⃣ 接收新域名指令
+  window.addEventListener('message', async (event) => {
+    if (event.data?.type !== 'REQUEST_MIGRATION_DATA') return;
+
+    // 安全校验 origin，可选
+    // if (event.origin !== 'https://typewords.cc') return;
+
+    log("收到迁移指令，开始读取数据...");
+
+    const db = await loadIDBKeyval(); // 确保 idb-keyval 已经加载
+    const data = await readAllStorageForMigration(db);
+
+    log("读取完成，发送数据给新域名");
+    event.source.postMessage({
+      type: 'MIGRATION_RESULT',
+      payload: data
+    }, event.origin);
+
+    log("已发送迁移数据");
   });
 </script>
 </body>
