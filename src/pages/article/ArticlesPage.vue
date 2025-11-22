@@ -168,7 +168,7 @@ const {data: recommendBookList, isFetching} = useFetch(resourceWrap(DICT_LIST.AR
 <template>
   <BasePage>
     <div class="card flex flex-col md:flex-row justify-between gap-space p-4 md:p-6">
-      <div class="mb-4 md:mb-0 md:w-44">
+      <div class="">
         <Book
             v-if="base.sbook.id"
             :is-add="false"
@@ -208,6 +208,7 @@ const {data: recommendBookList, isFetching} = useFetch(resourceWrap(DICT_LIST.AR
           </div>
         </div>
         <Progress class="mt-3 w-full md:w-auto"
+                  size="large"
                   :percentage="base.currentBookProgress"
                   :format="()=> `${ base.sbook?.lastLearnIndex || 0 }/${base.sbook?.length || 0}篇`"
                   :show-text="true"></Progress>

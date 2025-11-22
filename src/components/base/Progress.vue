@@ -99,6 +99,7 @@ const content = computed(() => {
     color: var(--el-text-color-regular);
     font-size: 14px;
     text-align: center;
+    flex-shrink: 0;
   }
 }
 </style>

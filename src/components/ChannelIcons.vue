@@ -25,7 +25,6 @@ let posterEl = $ref<HTMLDivElement | null>(null)
 
 // 计算学习统计数据
 const studyStats = $computed(() => {
-  const accuracyRate = practiceStore.total === 0 ? 100 : Math.round(((practiceStore.total - practiceStore.wrong) / practiceStore.total) * 100)
 
   return {
     total: practiceStore.total,
@@ -33,7 +32,6 @@ const studyStats = $computed(() => {
     review: practiceStore.reviewWordNumber + practiceStore.writeWordNumber,
     wrong: practiceStore.wrong,
     correct: practiceStore.total - practiceStore.wrong,
-    accuracy: accuracyRate,
     time: msToHourMinute(practiceStore.spend),
     date: dayjs().format('MM月DD日'),
     dictionary: baseStore.sdict.name || '未知词书'
@@ -125,11 +123,11 @@ const sentence = $computed(() => {
   <div class="flex-col center gap-1">
     <!-- 分享学习总结按钮 -->
     <BaseIcon @click="showShareDialog = true"
-              class="cursor-pointer hover:scale-110 transition-transform duration-200">
+              class="bounce">
       <IconFluentShare20Regular class="text-blue-500 hover:text-blue-600"/>
     </BaseIcon>
 
-    <a :href="GITHUB" target="_blank" rel="noreferrer" aria-label="GITHUB 项目地址">
+    <a :href="GITHUB" target="_blank" rel="noreferrer" aria-label="GITHUB 项目地址" class="color-[--color-reverse-black]">
       <BaseIcon>
         <IconSimpleIconsGithub/>
       </BaseIcon>
@@ -196,16 +194,16 @@ const sentence = $computed(() => {
             <!-- 统计数据 -->
             <div class="grid grid-cols-3 gap-4">
               <div class="stat-card">
-                <div class="text-2xl font-bold">{{ studyStats.accuracy }}%</div>
-                <div class="text-base">正确率</div>
-              </div>
-              <div class="stat-card">
                 <div class="text-2xl font-bold">{{ studyStats.newWords }}</div>
                 <div class="text-base">新词</div>
               </div>
               <div class="stat-card">
                 <div class="text-2xl font-bold">{{ studyStats.review }}</div>
                 <div class="text-base">复习</div>
+              </div>
+              <div class="stat-card">
+                <div class="text-2xl font-bold">{{ studyStats.wrong }}</div>
+                <div class="text-base">错词</div>
               </div>
             </div>
 
@@ -235,7 +233,7 @@ const sentence = $computed(() => {
       <!-- 右侧：分享引导区域 -->
       <div class="flex-1 pt-0 ">
         <div class="">
-          <div class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <div class="text-2xl font-bold mb-4 flex items-center">
             <span class="mr-2">🎯</span>
             分享你的进步
           </div>
@@ -257,10 +255,10 @@ const sentence = $computed(() => {
           </div>
         </div>
 
-        <div class="space-y-4 mt-30">
+        <div class="space-y-4 mt-24">
           <!-- 个性化装扮 -->
           <div @click="changeBackground"
-               class="flex items-center justify-start gap-space px-6 py-3 bg-gray-200 rounded-lg cp  hover:bg-gray-300 transition-all duration-200">
+               class="flex items-center justify-start gap-space color-black px-6 py-3 bg-gray-200 rounded-lg cp  hover:bg-gray-300 transition-all duration-200">
             <IconMdiSparkles class="w-4 h-4 text-yellow-500"/>
             换个背景
           </div>
@@ -292,6 +290,7 @@ const sentence = $computed(() => {
       </div>
     </div>
   </Dialog>
+
   <Dialog v-model="showXhsDialog" title="小红书">
     <div class="w-120 p-6 pt-0">
       <div class="mb-4">
@@ -302,6 +301,7 @@ const sentence = $computed(() => {
       </div>
     </div>
   </Dialog>
+
   <Dialog v-model="showQQDialog" title="QQ 交流群">
     <div class="w-120 p-6 pt-0">
       <div class="mb-4">
@@ -315,20 +315,6 @@ const sentence = $computed(() => {
 
 </template>
 <style scoped lang="scss">
-a {
-  color: unset;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
 .stat-card {
   @apply text-center bg-gray-900/30 py-4 rounded-2xl;
 }

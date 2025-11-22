@@ -54,6 +54,7 @@ declare module 'vue' {
     IconFluentBookLetter20Regular: typeof import('~icons/fluent/book-letter20-regular')['default']
     IconFluentBookNumber20Filled: typeof import('~icons/fluent/book-number20-filled')['default']
     IconFluentCalendarDate20Regular: typeof import('~icons/fluent/calendar-date20-regular')['default']
+    IconFluentCheckmark20Regular: typeof import('~icons/fluent/checkmark20-regular')['default']
     IconFluentCheckmarkCircle16Filled: typeof import('~icons/fluent/checkmark-circle16-filled')['default']
     IconFluentCheckmarkCircle16Regular: typeof import('~icons/fluent/checkmark-circle16-regular')['default']
     IconFluentCheckmarkCircle20Filled: typeof import('~icons/fluent/checkmark-circle20-filled')['default']

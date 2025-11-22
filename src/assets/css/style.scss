@@ -75,6 +75,10 @@
   --color-link: #2563EB;
 
   --color-card-bg: white;
+
+
+  --bg-card-primary: white;
+  --bg-card-secend: rgb(247, 247, 247);
 }
 
 .footer {
@@ -127,6 +131,9 @@ html.dark {
   --color-label-bg: rgb(10, 10, 10);
 
   --color-card-bg: rgb(30, 31, 34);
+
+  --bg-card-primary: rgb(30, 31, 34);
+  --bg-card-secend: rgb(43, 45, 48);
 
   .footer {
     &.hide {

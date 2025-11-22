@@ -140,7 +140,7 @@ calcWeekList(); // 新增：计算本周学习记录
       :keyboard="false"
       :show-close="false"
       class="statistics-modal">
-    <div class="p-8 pr-3 bg-white rounded-2xl space-y-6">
+    <div class="p-8 pr-3 bg-[var(--bg-card-primary)] rounded-2xl space-y-6">
       <!-- Header Section -->
       <div class="text-center relative">
         <div
@@ -160,40 +160,29 @@ calcWeekList(); // 新增：计算本周学习记录
         <!-- Study Time -->
         <div class="item">
           <IconFluentClock20Regular class="text-purple-500"/>
-          <div class="text-sm text-gray-600 mb-1 font-medium">学习时长</div>
-          <div class="text-xl font-bold text-gray-900">{{ formattedStudyTime }}</div>
+          <div class="text-sm mb-1 font-medium">学习时长</div>
+          <div class="text-xl font-bold">{{ formattedStudyTime }}</div>
         </div>
 
         <!-- Accuracy Rate -->
         <div class="item">
           <IconFluentTarget20Regular class="text-purple-500"/>
-          <div class="text-sm text-gray-600 mb-1 font-medium">正确率</div>
-          <div class="text-xl font-bold text-gray-900 mb-2">{{ accuracyRate }}%</div>
-          <div class="w-full bg-gray-200 rounded-full h-1" v-if="false">
-            <div
-              class="h-1 rounded-full transition-all duration-300"
-              :class="{
-                'bg-green-500': accuracyRate >= 95,
-                'bg-yellow-500': accuracyRate >= 85 && accuracyRate < 95,
-                'bg-red-500': accuracyRate < 85
-              }"
-              :style="{ width: accuracyRate + '%' }">
-            </div>
-          </div>
+          <div class="text-sm mb-1 font-medium">正确率</div>
+          <div class="text-xl font-bold">{{ accuracyRate }}%</div>
         </div>
 
         <!-- New Words -->
         <div class="item">
           <IconFluentSparkle20Regular class="text-purple-500"/>
-          <div class="text-sm text-gray-600 mb-1 font-medium">新词</div>
-          <div class="text-xl font-bold text-gray-900">{{ statStore.newWordNumber }}</div>
+          <div class="text-sm mb-1 font-medium">新词</div>
+          <div class="text-xl font-bold ">{{ statStore.newWordNumber }}</div>
         </div>
 
         <!-- New Words -->
         <div class="item">
           <IconFluentBook20Regular class="text-purple-500"/>
-          <div class="text-sm text-gray-600 mb-1 font-medium">复习</div>
-          <div class="text-xl font-bold text-gray-900">{{ statStore.reviewWordNumber + statStore.writeWordNumber }}</div>
+          <div class="text-sm mb-1 font-medium">复习</div>
+          <div class="text-xl font-bold">{{ statStore.reviewWordNumber + statStore.writeWordNumber }}</div>
         </div>
       </div>
 
@@ -201,9 +190,9 @@ calcWeekList(); // 新增：计算本周学习记录
         <div class="space-y-6 flex-1">
 
           <!-- Weekly Progress -->
-          <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2">
+          <div class="bg-[--bg-card-secend] rounded-xl p-2">
             <div class="text-center mb-4">
-              <div class="text-xl font-semibold text-gray-900 mb-1">本周学习记录</div>
+              <div class="text-xl font-semibold mb-1">本周学习记录</div>
             </div>
             <div class="flex justify-between gap-4">
               <div
@@ -220,13 +209,13 @@ calcWeekList(); // 新增：计算本周学习记录
           </div>
 
           <!-- Progress Overview -->
-          <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl py-2 px-6">
+          <div class="bg-[var(--bg-card-secend)] rounded-xl py-2 px-6">
             <div class="flex justify-between items-center mb-3">
-              <div class="text-xl font-semibold text-gray-900">学习进度</div>
+              <div class="text-xl font-semibold">学习进度</div>
               <div class="text-2xl font-bold text-purple-600">{{ studyProgress }}%</div>
             </div>
             <Progress :percentage="studyProgress" size="large" :show-text="false"/>
-            <div class="flex justify-between text-sm text-gray-600 font-medium mt-4">
+            <div class="flex justify-between text-sm font-medium mt-4">
               <span>已学习: {{ store.sdict.lastLearnIndex }}</span>
               <span>总词数: {{ store.sdict.length }}</span>
             </div>
@@ -362,6 +351,6 @@ calcWeekList(); // 新增：计算本周学习记录
 
 <style scoped>
 .item {
-  @apply bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 text-center border border-gray-100;
+  @apply bg-[var(--bg-card-secend)] rounded-xl p-2 text-center border border-gray-100;
 }
 </style>
