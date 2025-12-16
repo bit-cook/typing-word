@@ -312,19 +312,6 @@
       "translateLanguage": "zh-CN"
     },
     {
-      "id": "coca_20000",
-      "name": "COCA20000词",
-      "description": "COCA20000词",
-      "category": "中国考试",
-      "tags": [
-        "其他"
-      ],
-      "url": "coca20000.json",
-      "length": 20199,
-      "language": "en",
-      "translateLanguage": "zh-CN"
-    },
-    {
       "id": "4000_Essential_English_Words1",
       "name": "Essential Words",
       "description": "4000 Essential English Words meaning",
