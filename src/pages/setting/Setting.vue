@@ -211,12 +211,21 @@ function importJson(str: string, notice: boolean = true) {
   }
 }
 
-async function importData(e) {
+let timer = -1
+async function beforeImport() {
   importLoading = true
   await exportData('已自动备份数据', 'TypeWords数据备份.zip')
   await sleep(1500)
+  let d: HTMLDivElement = document.querySelector('#import')
+  d.click()
+  timer = setTimeout(()=>importLoading = false, 1000)
+}
+
+async function importData(e) {
+  clearTimeout(timer)
+  importLoading = true
   let file = e.target.files[0]
-  if (!file) return
+  if (!file) return importLoading = false
   if (file.name.endsWith(".json")) {
     let reader = new FileReader();
     reader.onload = function (v) {
@@ -373,12 +382,13 @@ function transferOk() {
             <div>请注意，导入数据将<b class="text-red"> 完全覆盖 </b>当前所有数据，请谨慎操作。执行导入操作时，会先自动备份当前数据到您的电脑中，供您随时恢复
             </div>
             <div class="flex gap-space mt-3">
-              <div class="import hvr-grow">
-                <BaseButton size="large" :loading="importLoading">导入数据恢复</BaseButton>
-                <input type="file"
-                       accept="application/json,.zip,application/zip"
-                       @change="importData">
-              </div>
+              <BaseButton size="large"
+                          @click="beforeImport"
+                          :loading="importLoading">导入数据恢复</BaseButton>
+              <input type="file"
+                     id="import"
+                     accept="application/json,.zip,application/zip"
+                     @change="importData">
             </div>
 
             <template v-if="isNewHost">
@@ -524,18 +534,6 @@ function transferOk() {
     .line {
       border-bottom: 1px solid #c4c3c3;
     }
-  }
-}
-
-.import {
-  display: inline-flex;
-  position: relative;
-
-  input {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    opacity: 0;
   }
 }
 

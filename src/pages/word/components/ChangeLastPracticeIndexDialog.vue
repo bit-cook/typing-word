@@ -33,7 +33,7 @@ defineEmits<{
   <Dialog v-model="model"
           padding
           title="修改学习进度">
-    <div class="py-4 h-80vh w-30rem">
+    <div class="py-4 h-80vh ">
       <BaseTable
           class="h-full"
           :request="requestList"
@@ -42,11 +42,11 @@ defineEmits<{
         <template v-slot="item">
           <WordItem
               @click="$emit('ok',item.index)"
-              :item="item.item" :show-translate="false">
-            <template v-slot:prefix>
-              {{ item.index }}
-            </template>
-          </WordItem>
+              :item="item.item"
+              :show-translate="false"
+              :index="item.index"
+              :show-option="false"
+          />
         </template>
       </BaseTable>
     </div>

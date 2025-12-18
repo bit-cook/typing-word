@@ -325,7 +325,7 @@ a {
   justify-content: space-between;
   transition: all .3s;
   padding: .6rem;
-  gap: .6rem;
+  gap: .3rem;
   border: 1px solid var(--color-item-border);
 
   .left {
@@ -378,6 +378,7 @@ a {
     align-items: center;
     gap: .5rem;
     color: var(--color-main-text);
+    flex-wrap: wrap;
 
     span {
       flex-shrink: 0;
@@ -385,7 +386,6 @@ a {
 
     .word {
       font-size: 1.2rem;
-      display: flex;
     }
 
     .phonetic {

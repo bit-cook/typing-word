@@ -1,13 +1,31 @@
 <script setup lang="tsx">
 import { DictId, Sort } from "@/types/types.ts";
 
+import { detail } from "@/apis";
+import BackIcon from "@/components/BackIcon.vue";
+import BaseButton from "@/components/BaseButton.vue";
+import BaseIcon from "@/components/BaseIcon.vue";
 import BasePage from "@/components/BasePage.vue";
-import { computed, onMounted, reactive, ref, shallowReactive, watch } from "vue";
+import BaseTable from "@/components/BaseTable.vue";
+import PopConfirm from "@/components/PopConfirm.vue";
+import WordItem from "@/components/WordItem.vue";
+import BaseInput from "@/components/base/BaseInput.vue";
+import Textarea from "@/components/base/Textarea.vue";
+import Form from "@/components/base/form/Form.vue";
+import FormItem from "@/components/base/form/FormItem.vue";
+import Toast from '@/components/base/toast/Toast.ts';
+import DeleteIcon from "@/components/icon/DeleteIcon.vue";
+import { AppEnv, LIB_JS_URL, PracticeSaveWordKey, TourConfig } from "@/config/env.ts";
+import { getCurrentStudyWord } from "@/hooks/dict.ts";
+import EditBook from "@/pages/article/components/EditBook.vue";
+import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog.vue";
+import { useBaseStore } from "@/stores/base.ts";
 import { useRuntimeStore } from "@/stores/runtime.ts";
+import { useSettingStore } from "@/stores/setting.ts";
+import { getDefaultDict } from "@/types/func.ts";
 import {
   _getDictDataByUrl,
   _nextTick,
-  cloneDeep,
   convertToWord,
   isMobile,
   loadJsLib,
@@ -15,29 +33,10 @@ import {
   shuffle,
   useNav
 } from "@/utils";
-import { nanoid } from "nanoid";
-import BaseIcon from "@/components/BaseIcon.vue";
-import BaseTable from "@/components/BaseTable.vue";
-import WordItem from "@/components/WordItem.vue";
-import Toast from '@/components/base/toast/Toast.ts'
-import PopConfirm from "@/components/PopConfirm.vue";
-import BackIcon from "@/components/BackIcon.vue";
-import BaseButton from "@/components/BaseButton.vue";
-import { useRoute, useRouter } from "vue-router";
-import { useBaseStore } from "@/stores/base.ts";
-import EditBook from "@/pages/article/components/EditBook.vue";
-import { getDefaultDict } from "@/types/func.ts";
-import BaseInput from "@/components/base/BaseInput.vue";
-import Textarea from "@/components/base/Textarea.vue";
-import FormItem from "@/components/base/form/FormItem.vue";
-import Form from "@/components/base/form/Form.vue";
-import DeleteIcon from "@/components/icon/DeleteIcon.vue";
-import { getCurrentStudyWord } from "@/hooks/dict.ts";
-import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog.vue";
-import { useSettingStore } from "@/stores/setting.ts";
 import { MessageBox } from "@/utils/MessageBox.tsx";
-import { AppEnv, LIB_JS_URL, Origin, PracticeSaveWordKey, TourConfig } from "@/config/env.ts";
-import { detail } from "@/apis";
+import { nanoid } from "nanoid";
+import { computed, onMounted, reactive, ref, shallowReactive, shallowRef, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const runtimeStore = useRuntimeStore()
 const base = useBaseStore()
@@ -45,7 +44,7 @@ const router = useRouter()
 const route = useRoute()
 const isMob = isMobile()
 let loading = $ref(false)
-let list2 = $ref([])
+let allList = $ref([])
 
 const getDefaultFormWord = () => {
   return {
@@ -74,7 +73,10 @@ let studyLoading = $ref(false)
 
 function syncDictInMyStudyList(study = false) {
   _nextTick(() => {
+    //这里不能移，一定要先找到对应的词典，再去改id。不然先改id，就找不到对应的词典了
     let rIndex = base.word.bookList.findIndex(v => v.id === runtimeStore.editDict.id)
+
+    runtimeStore.editDict.words = allList
     let temp = runtimeStore.editDict;
     if (!temp.custom && ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect].includes(temp.id)) {
       temp.custom = true
@@ -84,10 +86,10 @@ function syncDictInMyStudyList(study = false) {
     }
     temp.length = temp.words.length
     if (rIndex > -1) {
-      base.word.bookList[rIndex] = temp
+      base.word.bookList[rIndex] = getDefaultDict(temp)
       if (study) base.word.studyIndex = rIndex
     } else {
-      base.word.bookList.push(temp)
+      base.word.bookList.push(getDefaultDict(temp))
       if (study) base.word.studyIndex = base.word.bookList.length - 1
     }
   }, 100)
@@ -100,7 +102,7 @@ async function onSubmitWord() {
       let data: any = convertToWord(wordForm)
       //todo 可以检查的更准确些，比如json对比
       if (data.id) {
-        let r = list2.find(v => v.id === data.id)
+        let r = allList.find(v => v.id === data.id)
         if (r) {
           Object.assign(r, data)
           Toast.success('修改成功')
@@ -111,11 +113,11 @@ async function onSubmitWord() {
       } else {
         data.id = nanoid(6)
         data.checked = false
-        let r = list2.find(v => v.word === wordForm.word)
+        let r = allList.find(v => v.word === wordForm.word)
         if (r) {
           Toast.warning('已有相同名称单词！')
           return
-        } else list2.push(data)
+        } else allList.push(data)
         Toast.success('添加成功')
         wordForm = getDefaultFormWord()
       }
@@ -128,14 +130,15 @@ async function onSubmitWord() {
 
 function batchDel(ids: string[]) {
   ids.map(id => {
-    let rIndex2 = list2.findIndex(v => v.id === id)
+    let rIndex2 = allList.findIndex(v => v.id === id)
     if (rIndex2 > -1) {
       if (id === wordForm.id) {
         wordForm = getDefaultFormWord()
       }
-      list2.splice(rIndex2, 1)
+      allList.splice(rIndex2, 1)
     }
   })
+  tableRef.value.getData()
   syncDictInMyStudyList()
 }
 
@@ -189,7 +192,7 @@ onMounted(async () => {
     runtimeStore.editDict = getDefaultDict()
   } else {
     if (!runtimeStore.editDict.id) {
-      router.push("/word")
+      return router.push("/word")
     } else {
       if (!runtimeStore.editDict.words.length
         && !runtimeStore.editDict.custom
@@ -210,11 +213,12 @@ onMounted(async () => {
           }
         }
       }
-      list2 = runtimeStore.editDict.words
       loading = false
-      tableRef.value.getData()
     }
   }
+
+  allList = runtimeStore.editDict.words
+  tableRef.value.getData()
 })
 
 function formClose() {
@@ -439,10 +443,10 @@ async function requestList({pageNo, pageSize, searchKey}) {
   if (AppEnv.CAN_REQUEST) {
 
   } else {
-    let list = list2
-    let total = list2.length
+    let list = allList
+    let total = allList.length
     if (searchKey.trim()) {
-      list = list2.filter(v => v.word.toLowerCase().includes(searchKey.trim().toLowerCase()))
+      list = allList.filter(v => v.word.toLowerCase().includes(searchKey.trim().toLowerCase()))
       total = list.length
     }
     list = list.slice((pageNo - 1) * pageSize, (pageNo - 1) * pageSize + pageSize)
@@ -459,12 +463,13 @@ function onSort(type: Sort, pageNo: number, pageSize: number) {
     } else if ([Sort.random, Sort.randomAll].includes(type)) {
       fun = shuffle
     }
-    list2 = list2.slice(0, pageSize * (pageNo - 1))
-      .concat(fun(list2.slice(pageSize * (pageNo - 1), pageSize * (pageNo - 1) + pageSize)))
-      .concat(list2.slice(pageSize * (pageNo - 1) + pageSize))
-    runtimeStore.editDict.words = list2
+    allList = allList.slice(0, pageSize * (pageNo - 1))
+      .concat(fun(allList.slice(pageSize * (pageNo - 1), pageSize * (pageNo - 1) + pageSize)))
+      .concat(allList.slice(pageSize * (pageNo - 1) + pageSize))
+    runtimeStore.editDict.words = allList
     Toast.success('操作成功')
     tableRef.value.getData()
+    syncDictInMyStudyList()
   }
 }
 
@@ -522,7 +527,10 @@ defineRender(() => {
                     (val) =>
                       <WordItem
                         showTransPop={false}
-                        item={val.item}>
+                        showCollectIcon={false}
+                        showMarkIcon={false}
+                        item={val.item}
+                      >
                         {{
                           prefix: () => val.checkbox(val.item),
                           suffix: () => (

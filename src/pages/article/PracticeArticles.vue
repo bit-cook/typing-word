@@ -533,18 +533,6 @@ provide('currentPractice', currentPractice)
             @click="changeArticle"
             :active-id="articleData.article.id??''"
             :list="articleData.list ">
-            <template v-slot:suffix="{item,index}">
-              <BaseIcon
-                :class="!isArticleCollect(item) ? 'collect' : 'fill'"
-                @click.stop="toggleArticleCollect(item)"
-                :title="!isArticleCollect(item) ? '收藏' : '取消收藏'">
-                <IconFluentStar16Regular v-if="!isArticleCollect(item)"/>
-                <IconFluentStar16Filled v-else/>
-              </BaseIcon>
-              <BaseIcon title="可播放音频" v-if="item.audioSrc || item.audioFileId">
-                <IconBxVolumeFull class="opacity-100!"/>
-              </BaseIcon>
-            </template>
           </ArticleList>
         </div>
       </Panel>

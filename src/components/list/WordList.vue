@@ -1,11 +1,8 @@
 <script setup lang="ts">
 
-import { Word } from "@/types/types.ts";
-import VolumeIcon from "@/components/icon/VolumeIcon.vue";
 import BaseList from "@/components/list/BaseList.vue";
-import { usePlayWordAudio } from "@/hooks/sound.ts";
-import Tooltip from "@/components/base/Tooltip.vue";
-import WordItem from "@/components/WordItem.vue";
+import { Word } from "@/types/types.ts";
+import WordItem from "../WordItem.vue";
 
 withDefaults(defineProps<{
   list: Word[],
@@ -19,7 +16,6 @@ withDefaults(defineProps<{
 
 const emit = defineEmits<{
   click: [val: { item: Word, index: number }],
-  title: [val: { item: Word, index: number }],
 }>()
 
 const listRef: any = $ref(null as any)
@@ -32,22 +28,18 @@ function scrollToItem(index: number) {
   listRef?.scrollToItem(index)
 }
 
-const playWordAudio = usePlayWordAudio()
-
-defineExpose({ scrollToBottom, scrollToItem })
+defineExpose({scrollToBottom, scrollToItem})
 
 </script>
 
 <template>
-  <BaseList ref="listRef" @click="(e: any) => emit('click', e)" :list="list" v-bind="$attrs">
-    <template v-slot:prefix="{ item, index }">
-      <slot name="prefix" :item="item" :index="index"></slot>
-    </template>
-    <template v-slot="{ item, index }">
-      <WordItem :item="item"/>
-    </template>
-    <template v-slot:suffix="{ item, index }">
-      <slot name="suffix" :item="item" :index="index"></slot>
-    </template>
+  <BaseList
+      ref="listRef"
+      @click="(e:any) => emit('click',e)"
+      :list="list"
+      v-bind="$attrs"> 
+      <template v-slot="{ item, index, active }">
+        <WordItem :item="item" :index="index" :active="active" />
+      </template>
   </BaseList>
 </template>
