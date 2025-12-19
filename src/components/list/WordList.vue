@@ -37,9 +37,12 @@ defineExpose({scrollToBottom, scrollToItem})
       ref="listRef"
       @click="(e:any) => emit('click',e)"
       :list="list"
-      v-bind="$attrs"> 
+      v-bind="$attrs">
       <template v-slot="{ item, index, active }">
-        <WordItem :item="item" :index="index" :active="active" />
+        <WordItem
+          :show-translate="showTranslate"
+          :show-word="showWord"
+          :item="item" :index="index" :active="active" />
       </template>
   </BaseList>
 </template>
