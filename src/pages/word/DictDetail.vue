@@ -336,12 +336,18 @@ function importData(e) {
               tableRef.value.closeImportDialog()
               e.target.value = ''
               importLoading = false
+              allList = runtimeStore.editDict.words
+              tableRef.value.getData()
               syncDictInMyStudyList()
               Toast.success('导入成功！')
             }
           )
         } else {
           tableRef.value.closeImportDialog()
+          e.target.value = ''
+          importLoading = false
+          allList = runtimeStore.editDict.words
+          tableRef.value.getData()
           syncDictInMyStudyList()
           Toast.success('导入成功！')
         }
