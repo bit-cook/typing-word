@@ -146,6 +146,7 @@ declare module 'vue' {
     Progress: typeof import('./src/components/base/Progress.vue')['default']
     Radio: typeof import('./src/components/base/radio/Radio.vue')['default']
     RadioGroup: typeof import('./src/components/base/radio/RadioGroup.vue')['default']
+    ResourceCard: typeof import('./src/components/ResourceCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Select: typeof import('./src/components/base/select/Select.vue')['default']

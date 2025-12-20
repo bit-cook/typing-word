@@ -52,13 +52,13 @@ function goHome() {
           <IconFluentCommentEdit20Regular />
           <span v-if="settingStore.sideExpand">反馈</span>
         </div>
-        <div class="row" @click="router.push('/qa')">
-          <IconFluentQuestionCircle20Regular />
-          <span v-if="settingStore.sideExpand">帮助</span>
-        </div>
         <div class="row" @click="router.push('/doc')">
           <IconFluentDocument20Regular />
           <span v-if="settingStore.sideExpand">资料</span>
+        </div>
+        <div class="row" @click="router.push('/qa')">
+          <IconFluentQuestionCircle20Regular />
+          <span v-if="settingStore.sideExpand">帮助</span>
         </div>
         <!--        <div class="row" @click="router.push('/user')">-->
         <!--          <IconFluentPerson20Regular/>-->
