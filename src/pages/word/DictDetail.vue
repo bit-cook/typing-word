@@ -38,6 +38,7 @@ import { nanoid } from 'nanoid'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { wordDelete } from '@/apis/words.ts'
+import { copyOfficialDict } from '@/apis/dict.ts'
 
 const runtimeStore = useRuntimeStore()
 const base = useBaseStore()
@@ -147,32 +148,33 @@ async function batchDel(ids: string[]) {
     syncDictInMyStudyList()
   }
 
+  let cloudHandle = async dictId => {
+    let res = await wordDelete(null, {
+      wordIds: ids,
+      dictId,
+    })
+    if (res.success) {
+      tableRef.value.getData()
+    } else {
+      return Toast.error(res.msg ?? '删除失败')
+    }
+  }
+
   if (AppEnv.CAN_REQUEST) {
     if (dict.custom) {
       if (dict.sync) {
-        let res = await wordDelete(null, {
-          wordIds: ids,
-          userDictId: dict?.userDictId,
-          dictId: dict.id,
-        })
-        if (res.success) {
-          tableRef.value.getData()
-        } else {
-          return Toast.error(res.msg ?? '删除失败')
-        }
+        await cloudHandle(dict.id)
       } else {
         localHandle()
       }
     } else {
-      let r = await add2MyDict({
-        id: dict.id,
-        perDayStudyNumber: dict.perDayStudyNumber,
-        lastLearnIndex: dict.lastLearnIndex,
-        complete: dict.complete,
-      })
-      if (!r.success) return Toast.error(r.msg)
-      else {
-        dict.userDictId = r.data
+      let r = await copyOfficialDict(null, { id: dict.id })
+      if (r.success) {
+        await cloudHandle(r.data.id)
+        getDetail(r.data.id)
+      } else {
+        //todo 权限判断，能否复制
+        return Toast.error(r.msg)
       }
     }
   } else {
@@ -255,11 +257,7 @@ onMounted(async () => {
       }
       if (base.word.bookList.find(book => book.id === runtimeStore.editDict.id)) {
         if (AppEnv.CAN_REQUEST) {
-          //todo 优化：这里只返回详情
-          let res = await detail({ id: runtimeStore.editDict.id })
-          if (res.success) {
-            runtimeStore.editDict.statistics = res.data.statistics
-          }
+          getDetail(runtimeStore.editDict.id)
         }
       }
       loading = false
@@ -269,6 +267,14 @@ onMounted(async () => {
   allList = runtimeStore.editDict.words
   tableRef.value.getData()
 })
+
+async function getDetail(id) {
+  //todo 优化：这里只返回详情
+  let res = await detail({ id })
+  if (res.success) {
+    runtimeStore.editDict = res.data
+  }
+}
 
 function formClose() {
   if (isEdit) isEdit = false

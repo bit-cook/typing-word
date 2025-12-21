@@ -1,6 +1,10 @@
 import http from '@/utils/http.ts'
 import { Dict } from '@/types/types.ts'
 
-export function addDict(params?, data?) {
-  return http<Dict>('dict/addDict', data, params, 'post')
+export function copyOfficialDict(params?, data?) {
+  return http<Dict>('dict/copyOfficialDict', data, params, 'post')
+}
+
+export function deleteDict(params?, data?) {
+  return http<Dict>('dict/delete', data, params, 'post')
 }
