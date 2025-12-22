@@ -80,9 +80,9 @@ const categories = ref<Category[]>([
         link: 'https://pan.quark.cn/s/07e25ee6de9f',
       },
       {
-        name: '新概念合集',
-        description: '包含前面的内容',
-        difficulty: '',
+        name: '新概念资源合集',
+        description: '',
+        difficulty: '包含前面所有的内容',
         link: 'https://pan.quark.cn/s/6b12da160020',
       },
     ],
@@ -129,9 +129,8 @@ const categories = ref<Category[]>([
         link: 'https://pan.quark.cn/s/5ba146c46180',
       },
       {
-        name: '电视/电影合集',
-        description: '包含前面的内容',
-        difficulty: '',
+        name: '电视/电影资源合集',
+        difficulty: '包含前面所有的内容',
         link: 'https://pan.quark.cn/s/84ecb30b700b', //159
         // link: 'https://pan.quark.cn/s/e9b62b79c48c',
       },
@@ -272,7 +271,7 @@ const openLink = (url: string) => {
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold mb-4">英语学习资源分享</h1>
         <p class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-          以下是我整理的英语学习资源，希望对大家有所帮助！
+          以下是整理的一些英语学习资源，希望对大家有所帮助！
         </p>
       </div>
 
@@ -353,8 +352,8 @@ const openLink = (url: string) => {
             <li>所有资源均来自互联网收集，仅供学习交流使用</li>
             <li>
               如果链接失效，请及时<a :href="`https://v.wjx.cn/vm/ev0W7fv.aspx#`" target="_blank"
-                >告知</a
-              >，我会尽快更新
+            >告知</a
+            >，我会尽快更新
             </li>
           </ul>
         </div>
