@@ -231,6 +231,7 @@ export enum WordPracticeMode {
   DictationOnly = 3, // 独立默写模式
   ListenOnly = 4, // 独立听写模式
   FollowWriteOnly = 5, // 独立跟写模式（内部会自动切换到 Spell）
+  Shuffle = 6, // 随机复习模式
 }
 
 //练习类型
@@ -276,4 +277,65 @@ export enum WordPracticeStage {
 
   Shuffle = 12,
   Complete = 13,
+}
+
+export const WordPracticeModeStageMap: Record<WordPracticeMode, WordPracticeStage[]> = {
+  [WordPracticeMode.Free]: [WordPracticeStage.FollowWriteNewWord, WordPracticeStage.Complete],
+  [WordPracticeMode.FollowWriteOnly]: [
+    WordPracticeStage.FollowWriteNewWord,
+    WordPracticeStage.FollowWriteReview,
+    WordPracticeStage.FollowWriteReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.IdentifyOnly]: [
+    WordPracticeStage.IdentifyNewWord,
+    WordPracticeStage.IdentifyReview,
+    WordPracticeStage.IdentifyReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.DictationOnly]: [
+    WordPracticeStage.DictationNewWord,
+    WordPracticeStage.DictationReview,
+    WordPracticeStage.DictationReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.ListenOnly]: [
+    WordPracticeStage.ListenNewWord,
+    WordPracticeStage.ListenReview,
+    WordPracticeStage.ListenReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.System]: [
+    WordPracticeStage.FollowWriteNewWord,
+    WordPracticeStage.ListenNewWord,
+    WordPracticeStage.DictationNewWord,
+    WordPracticeStage.IdentifyReview,
+    WordPracticeStage.ListenReview,
+    WordPracticeStage.DictationReview,
+    WordPracticeStage.IdentifyReviewAll,
+    WordPracticeStage.ListenReviewAll,
+    WordPracticeStage.DictationReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.Shuffle]: [
+    WordPracticeStage.Shuffle,
+    WordPracticeStage.Complete,
+  ],
+}
+
+export const WordPracticeStageNameMap: Record<WordPracticeStage, string> = {
+  [WordPracticeStage.FollowWriteNewWord]: '跟写新词',
+  [WordPracticeStage.IdentifyNewWord]: '自测新词',
+  [WordPracticeStage.ListenNewWord]: '听写新词',
+  [WordPracticeStage.DictationNewWord]: '默写新词',
+  [WordPracticeStage.FollowWriteReview]: '跟写上次学习',
+  [WordPracticeStage.IdentifyReview]: '自测上次学习',
+  [WordPracticeStage.ListenReview]: '听写上次学习',
+  [WordPracticeStage.DictationReview]: '默写上次学习',
+  [WordPracticeStage.FollowWriteReviewAll]: '跟写之前学习',
+  [WordPracticeStage.IdentifyReviewAll]: '自测之前学习',
+  [WordPracticeStage.ListenReviewAll]: '听写之前学习',
+  [WordPracticeStage.DictationReviewAll]: '默写之前学习',
+  [WordPracticeStage.Complete]: '学习完成',
+  [WordPracticeStage.Shuffle]: '随机复习',
 }

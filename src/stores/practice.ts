@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { WordPracticeStage } from '@/types/types.ts'
+import { WordPracticeModeStageMap, WordPracticeStage, WordPracticeStageNameMap } from '@/types/types.ts'
+import { useSettingStore } from './setting'
 
 export interface PracticeState {
   step: number
@@ -29,4 +30,15 @@ export const usePracticeStore = defineStore('practice', {
       wrong: 0,
     }
   },
+  getters: {
+    getStageName: (state) => {
+      return WordPracticeStageNameMap[state.stage]
+    },
+    nextStage: (state) => {
+      const settingStore = useSettingStore()
+      const stages = WordPracticeModeStageMap[settingStore.wordPracticeMode]
+      const index = stages.findIndex(v => v === state.stage)
+      return stages[index + 1]
+    }
+  }
 })

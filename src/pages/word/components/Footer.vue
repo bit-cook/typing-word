@@ -2,7 +2,7 @@
 import { inject, Ref } from 'vue'
 import { usePracticeStore } from '@/stores/practice.ts'
 import { useSettingStore } from '@/stores/setting.ts'
-import { PracticeData, ShortcutKey, WordPracticeStage } from '@/types/types.ts'
+import { PracticeData, ShortcutKey, WordPracticeModeStageMap, WordPracticeStage, WordPracticeStageNameMap } from '@/types/types.ts'
 import BaseIcon from '@/components/BaseIcon.vue'
 import Tooltip from '@/components/base/Tooltip.vue'
 import Progress from '@/components/base/Progress.vue'
@@ -35,62 +35,14 @@ function format(val: number, suffix: string = '', check: number = -1) {
 
 const status = $computed(() => {
   if (isTypingWrongWord.value) return '复习错词'
-  return getStageStr(statStore.stage)
+  return statStore.getStageName
 })
-
-function getStageStr(stage: WordPracticeStage) {
-  let str = ''
-  switch (stage) {
-    case WordPracticeStage.FollowWriteNewWord:
-      str += `跟写新词`
-      break
-    case WordPracticeStage.IdentifyNewWord:
-      str += `自测新词`
-      break
-    case WordPracticeStage.ListenNewWord:
-      str += `听写新词`
-      break
-    case WordPracticeStage.DictationNewWord:
-      str += `默写新词`
-      break
-    case WordPracticeStage.FollowWriteReview:
-      str += `跟写上次学习`
-      break
-    case WordPracticeStage.IdentifyReview:
-      str += `自测上次学习`
-      break
-    case WordPracticeStage.ListenReview:
-      str += `听写上次学习`
-      break
-    case WordPracticeStage.DictationReview:
-      str += `默写上次学习`
-      break
-    case WordPracticeStage.FollowWriteReviewAll:
-      str += '跟写之前学习'
-      break
-    case WordPracticeStage.IdentifyReviewAll:
-      str += '自测之前学习'
-      break
-    case WordPracticeStage.ListenReviewAll:
-      str += '听写之前学习'
-      break
-    case WordPracticeStage.DictationReviewAll:
-      str += '默写之前学习'
-      break
-    case WordPracticeStage.Complete:
-      str += '学习完成'
-      break
-    case WordPracticeStage.Shuffle:
-      str += '随机复习'
-      break
-  }
-  return str
-}
 
 const progress = $computed(() => {
   if (!practiceData.words.length) return 0
   return (practiceData.index / practiceData.words.length) * 100
 })
+
 </script>
 
 <template>
@@ -137,7 +89,7 @@ const progress = $computed(() => {
           <BaseIcon
             v-if="statStore.step < 9"
             @click="emit('skipStep')"
-            :title="`跳到下一阶段:${getStageStr(statStore.stage + 1)}`"
+            :title="`跳到下一阶段:${WordPracticeStageNameMap[statStore.nextStage]}`"
           >
             <IconFluentArrowRight16Regular />
           </BaseIcon>

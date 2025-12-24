@@ -238,7 +238,7 @@ async function onShufflePracticeSettingOk(total) {
   })
   isSaveData = false
   localStorage.removeItem(PracticeSaveWordKey.key)
-
+  settingStore.wordPracticeMode = WordPracticeMode.Shuffle
   let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
   currentStudy.shuffle = shuffle(
     store.sdict.words.slice(0, store.sdict.lastLearnIndex).filter(v => !ignoreList.includes(v.word))
@@ -301,7 +301,7 @@ let isNewHost = $ref(window.location.host === Host)
               <span>已完成 {{ progressTextRight }} 词 / 共 {{ store.sdict.words.length }} 词</span>
               <span v-if="store.sdict.id">
                 预计完成日期：{{
-                  _getAccomplishDate(store.sdict.words.length, store.sdict.perDayStudyNumber)
+                  _getAccomplishDate(store.sdict.words.length - store.sdict.lastLearnIndex, store.sdict.perDayStudyNumber)
                 }}
               </span>
             </div>
