@@ -438,6 +438,7 @@ const systemPracticeText = $computed(() => {
 
               <BaseButton
                 class="w-full"
+                v-if="settingStore.wordPracticeMode !== WordPracticeMode.Review"
                 :disabled="!currentStudy.review.length && !currentStudy.write.length"
                 @click="startPractice(WordPracticeMode.Review,true)"
               >
@@ -445,6 +446,7 @@ const systemPracticeText = $computed(() => {
               </BaseButton>
               <BaseButton
                 class="w-full"
+                v-if="settingStore.wordPracticeMode !== WordPracticeMode.Shuffle"
                 :disabled="store.sdict.lastLearnIndex < 10"
                 @click="check(() => (showShufflePracticeSettingDialog = true))"
               >

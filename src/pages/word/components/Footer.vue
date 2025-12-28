@@ -2,8 +2,13 @@
 import { inject, Ref } from 'vue'
 import { usePracticeStore } from '@/stores/practice.ts'
 import { useSettingStore } from '@/stores/setting.ts'
-import { PracticeData, ShortcutKey,
-  WordPracticeMode, WordPracticeModeStageMap, WordPracticeStage, WordPracticeStageNameMap } from '@/types/types.ts'
+import {
+  PracticeData,
+  ShortcutKey,
+  WordPracticeMode,
+  WordPracticeModeStageMap,
+  WordPracticeStageNameMap,
+} from '@/types/types.ts'
 import BaseIcon from '@/components/BaseIcon.vue'
 import Tooltip from '@/components/base/Tooltip.vue'
 import Progress from '@/components/base/Progress.vue'
@@ -46,7 +51,6 @@ const progress = $computed(() => {
   if (!practiceData.words.length) return 0
   return (practiceData.index / practiceData.words.length) * 100
 })
-
 </script>
 
 <template>
@@ -61,7 +65,14 @@ const progress = $computed(() => {
     </Tooltip>
 
     <div class="bottom">
-      <Progress :percentage="progress" :stroke-width="8" color="#69b1ff" :show-text="false" />
+      <div class="flex gap-1">
+        <Tooltip
+          :title="WordPracticeStageNameMap[i]"
+          v-for="i of WordPracticeModeStageMap[settingStore.wordPracticeMode]"
+        >
+          <Progress :percentage="progress" :stroke-width="8" color="#69b1ff" :show-text="false" />
+        </Tooltip>
+      </div>
 
       <div class="flex justify-between items-center">
         <div class="stat">
@@ -99,7 +110,7 @@ const progress = $computed(() => {
 
           <div class="relative z-999 group">
             <div
-              class="space-y-2 btn-no-margin pb-2 left-1/2 -transform-translate-x-1/2 absolute z-999 bottom-full scale-95 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300  pointer-events-none group-hover:pointer-events-auto"
+              class="space-y-2 btn-no-margin pb-2 left-1/2 -transform-translate-x-1/2 absolute z-999 bottom-full scale-95 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto"
             >
               <BaseButton size="normal" type="info" class="w-full" @click="$emit('toggleSimple')">
                 <div class="flex items-center gap-2">
