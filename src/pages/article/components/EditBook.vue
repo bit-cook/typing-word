@@ -14,6 +14,7 @@ import Form from "@/components/base/form/Form.vue";
 import FormItem from "@/components/base/form/FormItem.vue";
 import { addDict } from "@/apis";
 import { AppEnv } from "@/config/env.ts";
+import { nanoid } from 'nanoid'
 
 const props = defineProps<{
   isAdd: boolean,
@@ -80,7 +81,7 @@ async function onSubmit() {
         if (!data.custom && ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect, DictId.articleCollect].includes(data.en_name || data.id)) {
           data.custom = true
           if (!data.id.includes('_custom')) {
-            data.id += '_custom'
+            data.id +='_custom_' + nanoid(6)
           }
         }
         runtimeStore.editDict = data

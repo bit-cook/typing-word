@@ -87,7 +87,7 @@ function syncDictInMyStudyList(study = false) {
     ) {
       temp.custom = true
       if (!temp.id.includes('_custom')) {
-        temp.id += '_custom'
+        temp.id += '_custom_' + nanoid(6)
       }
     }
     temp.length = temp.words.length

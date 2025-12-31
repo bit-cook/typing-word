@@ -66,7 +66,7 @@ export interface Sentence {
 }
 
 export interface Article {
-  id?: number
+  id?: number|string
   title: string
   titleTranslate: string
   text: string

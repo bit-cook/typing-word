@@ -50,6 +50,7 @@ import { getPracticeArticleCache, setPracticeArticleCache } from '@/utils/cache.
 import { emitter, EventKey, useEvents } from '@/utils/eventBus.ts'
 import { computed, onMounted, onUnmounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { nanoid } from 'nanoid'
 
 const store = useBaseStore()
 const runtimeStore = useRuntimeStore()
@@ -354,7 +355,7 @@ function saveArticle(val: Article) {
   setArticle(val)
   store.sbook.custom = true
   if (!store.sbook.id.includes('_custom')) {
-    store.sbook.id += '_custom'
+    store.sbook.id += '_custom_' + nanoid(6)
   }
 }
 
