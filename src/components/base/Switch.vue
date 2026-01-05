@@ -71,44 +71,29 @@ const ballSize = computed(() => switchHeight.value - 4);
 
 <style scoped lang="scss">
 .switch {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  outline: none;
-  background-color: #DCDFE6;
-  position: relative;
-  transition: background-color 0.3s;
+  @apply inline-flex items-center cursor-pointer user-select-none outline-none bg-gray-200 position-relative transition-all duration-300;
+
 
   &.disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
+    @apply cursor-not-allowed opacity-60;
   }
 
   &.checked {
-    background-color: #409eff;
+    @apply bg-blue-500;
   }
 
   .ball {
-    background-color: #fff;
-    border-radius: 50%;
-    transition: transform 0.3s;
-    box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
-    position: absolute;
+    @apply bg-white rounded-full transition-transform duration-300 box-shadow-sm absolute;
   }
 
   .text {
-    position: absolute;
+    @apply absolute text-xs text-white user-select-none;
     font-size: 0.75rem;
-    color: #fff;
-    user-select: none;
-
     &.left {
-      margin-left: 6px;
+      @apply ml-1.5;
     }
-
     &.right {
-      right: 6px;
+      @apply right-1.5;
     }
   }
 }

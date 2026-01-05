@@ -145,15 +145,11 @@ const initAudio = () => {
 }
 
 const handleVolumeUpdate = (volume: number) => {
-  settingStore.setState({
-    articleSoundVolume: volume,
-  })
+  settingStore.articleSoundVolume = volume
 }
 
 const handleSpeedUpdate = (speed: number) => {
-  settingStore.setState({
-    articleSoundSpeed: speed,
-  })
+  settingStore.articleSoundSpeed = speed
 }
 
 watch(
@@ -517,7 +513,7 @@ provide('currentPractice', currentPractice)
             />
           </Tooltip>
         </div>
-        <div class="bottom ">
+        <div class="bottom">
           <div class="flex justify-between items-center gap-2">
             <div class="stat">
               <div class="row">
@@ -551,8 +547,6 @@ provide('currentPractice', currentPractice)
             <ArticleAudio
               ref="audioRef"
               :article="articleData.article"
-              :autoplay="settingStore.articleAutoPlayNext"
-              @ended="settingStore.articleAutoPlayNext && next()"
               @update-speed="handleSpeedUpdate"
               @update-volume="handleVolumeUpdate"
             ></ArticleAudio>

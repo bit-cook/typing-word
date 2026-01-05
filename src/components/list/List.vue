@@ -111,8 +111,8 @@ defineExpose({scrollBottom})
         </template>
       </BaseInput>
     </div>
-    <transition-group name="drag" class="list" tag="div">
-      <div class="item"
+    <transition-group name="drag" class="space-y-3" tag="div">
+      <div class="common-list-item"
            :class="[
                 (selectItem.id ===  item.id) && 'active',
                 draggable  && 'draggable',
@@ -177,43 +177,6 @@ defineExpose({scrollBottom})
 
   .search {
     margin: .6rem 0;
-  }
-
-  .list {
-    .item {
-      box-sizing: border-box;
-      background: var(--color-second);
-      color: var(--color-font-1);
-      border-radius: .5rem;
-      margin-bottom: .6rem;
-      padding: .6rem;
-      display: flex;
-      justify-content: space-between;
-      transition: all .3s;
-
-      .right {
-        display: flex;
-        flex-direction: column;
-        transition: all .3s;
-        opacity: 0;
-      }
-
-      &:hover {
-        background: var(--color-third);
-        .right {
-          opacity: 1;
-        }
-      }
-
-      &.active {
-        background: var(--color-fourth);
-        color: var(--color-font-1);
-      }
-
-      &.draggable {
-        cursor: move;
-      }
-    }
   }
 }
 </style>

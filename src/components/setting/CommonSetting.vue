@@ -25,9 +25,6 @@ const simpleWords = $computed({
 </script>
 
 <template>
-  <!--        通用练习设置-->
-  <!--        通用练习设置-->
-  <!--        通用练习设置-->
   <div>
     <SettingItem
       title="忽略大小写"
