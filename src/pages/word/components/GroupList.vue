@@ -76,7 +76,7 @@ const emit = defineEmits<{
     >
       <RadioGroup :model-value="store.currentGroup">
         <div class="card-white">
-          <div ref="scrollContainer" class="h-70 overflow-y-auto space-y-2">
+          <div ref="scrollContainer" class="max-h-70 overflow-y-auto space-y-2">
             <div
               :ref="el => setItemRef(el as HTMLElement, value - 1)"
               class="break-keep flex bg-primary px-3 py-1 rounded-md hover:bg-card-active anim border border-solid border-item"

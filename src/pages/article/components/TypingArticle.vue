@@ -10,14 +10,7 @@ import { useBaseStore } from '@/stores/base.ts'
 import { usePracticeStore } from '@/stores/practice.ts'
 import { useSettingStore } from '@/stores/setting.ts'
 import { getDefaultArticle, getDefaultWord } from '@/types/func.ts'
-import {
-  Article,
-  ArticleWord,
-  PracticeArticleWordType,
-  Sentence,
-  ShortcutKey,
-  Word,
-} from '@/types/types.ts'
+import { Article, ArticleWord, PracticeArticleWordType, Sentence, ShortcutKey, Word } from '@/types/types.ts'
 import { _dateFormat, _nextTick, isMobile, msToHourMinute, total } from '@/utils'
 import { emitter, EventKey, useEvents } from '@/utils/eventBus.ts'
 import ContextMenu from '@imengyu/vue3-context-menu'
@@ -96,22 +89,19 @@ const settingStore = useSettingStore()
 const statStore = usePracticeStore()
 const isMob = isMobile()
 
-watch(
-  [() => sectionIndex, () => sentenceIndex, () => wordIndex, () => stringIndex],
-  ([a, b, c]) => {
-    if (a !== 0 || b !== 0 || c !== 0) {
-      setPracticeArticleCache({
-        practiceData: {
-          sectionIndex,
-          sentenceIndex,
-          wordIndex,
-        },
-        statStoreData: statStore.$state,
-      })
-    }
-    checkCursorPosition(a, b, c)
+watch([() => sectionIndex, () => sentenceIndex, () => wordIndex, () => stringIndex], ([a, b, c]) => {
+  if (a !== 0 || b !== 0 || c !== 0) {
+    setPracticeArticleCache({
+      practiceData: {
+        sectionIndex,
+        sentenceIndex,
+        wordIndex,
+      },
+      statStoreData: statStore.$state,
+    })
   }
-)
+  checkCursorPosition(a, b, c)
+})
 
 // watch(() => props.article.id, init, {immediate: true})
 
@@ -286,11 +276,7 @@ const isNameWord = () => {
   let currentSection = props.article.sections[sectionIndex]
   let currentSentence = currentSection[sentenceIndex]
   let w: ArticleWord = currentSentence.words[wordIndex]
-  return (
-    w?.type === PracticeArticleWordType.Word &&
-    namePatterns.length > 0 &&
-    namePatterns.includes(normalize(w.word))
-  )
+  return w?.type === PracticeArticleWordType.Word && namePatterns.length > 0 && namePatterns.includes(normalize(w.word))
 }
 
 let isTyping = false
@@ -497,11 +483,7 @@ function del() {
   }
 }
 
-function showSentence(
-  i1: number = sectionIndex,
-  i2: number = sentenceIndex,
-  i3: number = wordIndex
-) {
+function showSentence(i1: number = sectionIndex, i2: number = sentenceIndex, i3: number = wordIndex) {
   hoverIndex = { sectionIndex: i1, sentenceIndex: i2, wordIndex: i3 }
 }
 
@@ -690,13 +672,16 @@ const currentPractice = inject('currentPractice', [])
       @beforeinput="handleMobileBeforeInput"
       @input="handleMobileInput"
     />
-    <header class="mb-4">
-      <div class="title">
-        <span class="font-family text-3xl">{{ store.sbook.lastLearnIndex + 1 }}. </span
-        >{{ props.article?.title ?? '' }}
+    <header class="pt-10 pb-6">
+      <div class="text-center">
+        <span class="text-3xl">{{ store.sbook.lastLearnIndex + 1 }}. </span>
+        <span class="text-4xl">{{ props.article?.title??'' }}</span>
+        <span class="ml-6 text-2xl" v-if="settingStore.translate">{{ props.article?.titleTranslate }}</span>
       </div>
-      <div class="titleTranslate" v-if="settingStore.translate">
-        {{ props.article.titleTranslate }}
+
+      <div class="mt-2 text-2xl" v-if="props.article?.question?.text">
+        <div>Question: {{ props.article?.question?.text }}</div>
+        <div class="text-xl color-translate-second" v-if="settingStore.translate">问题: {{ props.article?.question?.translate }}</div>
       </div>
     </header>
 
@@ -742,11 +727,7 @@ const currentPractice = inject('currentPractice', [])
                 ]"
                 @click="playWordAudio(word.word)"
               >
-                <TypingWord
-                  :word="word"
-                  :is-typing="true"
-                  v-if="isCurrent(indexI, indexJ, indexW) && !isSpace"
-                />
+                <TypingWord :word="word" :is-typing="true" v-if="isCurrent(indexI, indexJ, indexW) && !isSpace" />
                 <TypingWord :word="word" :is-typing="false" v-else />
                 <span class="border-bottom" v-if="settingStore.dictation"></span>
               </span>
@@ -758,10 +739,7 @@ const currentPractice = inject('currentPractice', [])
                 :is-shake="isCurrent(indexI, indexJ, indexW) && isSpace && wrong !== ''"
               />
             </span>
-            <span
-              class="sentence-translate-mobile"
-              v-if="isMob && settingStore.translate && sentence.translate"
-            >
+            <span class="sentence-translate-mobile" v-if="isMob && settingStore.translate && sentence.translate">
               {{ sentence.translate }}
             </span>
           </span>
@@ -773,11 +751,7 @@ const currentPractice = inject('currentPractice', [])
             class="row"
             :class="[
               `translate${indexI + '-' + indexJ}`,
-              sectionIndex > indexI
-                ? 'wrote'
-                : sectionIndex >= indexI && sentenceIndex > indexJ
-                  ? 'wrote'
-                  : '',
+              sectionIndex > indexI ? 'wrote' : sectionIndex >= indexI && sentenceIndex > indexJ ? 'wrote' : '',
             ]"
             v-for="(item, indexJ) in v"
           >
@@ -788,18 +762,12 @@ const currentPractice = inject('currentPractice', [])
           </div>
         </template>
       </div>
-      <div
-        class="cursor"
-        v-if="!isEnd"
-        :style="{ top: cursor.top + 'px', left: cursor.left + 'px' }"
-      ></div>
+      <div class="cursor" v-if="!isEnd" :style="{ top: cursor.top + 'px', left: cursor.left + 'px' }"></div>
     </div>
 
     <div class="options flex justify-center" v-if="isEnd">
       <BaseButton @click="emit('replay')">重新练习 </BaseButton>
-      <BaseButton
-        v-if="store.sbook.lastLearnIndex < store.sbook.articles.length - 1"
-        @click="emit('next')"
+      <BaseButton v-if="store.sbook.lastLearnIndex < store.sbook.articles.length - 1" @click="emit('next')"
         >下一篇
       </BaseButton>
     </div>
@@ -813,9 +781,7 @@ const currentPractice = inject('currentPractice', [])
         v-for="(item, i) in currentPractice"
       >
         <span :class="i === currentPractice.length - 1 ? 'color-red' : 'color-gray'"
-          >{{ i === currentPractice.length - 1 ? '当前' : i + 1 }}.&nbsp;&nbsp;{{
-            _dateFormat(item.startDate)
-          }}</span
+          >{{ i === currentPractice.length - 1 ? '当前' : i + 1 }}.&nbsp;&nbsp;{{ _dateFormat(item.startDate) }}</span
         >
         <span>{{ msToHourMinute(item.spend) }}</span>
       </div>
@@ -826,12 +792,7 @@ const currentPractice = inject('currentPractice', [])
         <BaseButton @click="showQuestions = !showQuestions">显示题目</BaseButton>
       </div>
       <div class="toggle" v-if="showQuestions">
-        <QuestionForm
-          :questions="article.questions"
-          :duration="300"
-          :immediateFeedback="false"
-          :randomize="true"
-        />
+        <QuestionForm :questions="article.questions" :duration="300" :immediateFeedback="false" :randomize="true" />
       </div>
     </template>
   </div>
@@ -850,26 +811,6 @@ $article-lh: 2.4;
   width: var(--article-width);
   font-size: 1.6rem;
   margin-bottom: 10rem;
-
-  header {
-    word-wrap: break-word;
-    position: relative;
-    padding-top: 3rem;
-
-    .title {
-      text-align: center;
-      font-size: 2.2rem;
-      font-family: var(--en-article-family);
-    }
-
-    .titleTranslate {
-      @extend .title;
-      font-size: 1.2rem;
-      margin-top: 0.5rem;
-      font-family: var(--zh-article-family);
-      font-weight: bold;
-    }
-  }
 
   .mobile-input {
     position: absolute;

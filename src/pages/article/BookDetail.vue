@@ -12,12 +12,12 @@ import { computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   _dateFormat,
   _getDictDataByUrl,
-  isMobile,
+  _nextTick,
+  cloneDeep,
   msToHourMinute,
   resourceWrap,
   total,
   useNav,
-  _nextTick,
 } from '@/utils'
 import { getDefaultArticle, getDefaultDict } from '@/types/func.ts'
 import Toast from '@/components/base/toast/Toast.ts'
@@ -29,30 +29,20 @@ import { AppEnv, DICT_LIST } from '@/config/env.ts'
 import { detail } from '@/apis'
 import BaseIcon from '@/components/BaseIcon.vue'
 import Switch from '@/components/base/Switch.vue'
+import { useGetDict } from '@/hooks/dict.ts'
 
 const runtimeStore = useRuntimeStore()
 const settingStore = useSettingStore()
-const base = useBaseStore()
+const store = useBaseStore()
 const router = useRouter()
 const route = useRoute()
 const { nav } = useNav()
 
 let isEdit = $ref(false)
 let isAdd = $ref(false)
-let loading = $ref(false)
 let studyLoading = $ref(false)
 
 let selectArticle: Article = $ref(getDefaultArticle({ id: -1 }))
-
-// 计算当前选中文章的索引
-const currentArticleIndex = computed(() => {
-  return runtimeStore.editDict.articles.findIndex(article => article.id === selectArticle.id)
-})
-
-// 处理播放下一个音频
-const handlePlayNext = (nextArticle: Article) => {
-  selectArticle = nextArticle
-}
 
 function handleCheckedChange(val) {
   selectArticle = val.item
@@ -64,7 +54,7 @@ async function startPractice() {
     return Toast.warning('没有文章可学习！')
   }
   studyLoading = true
-  await base.changeBook(sbook)
+  await store.changeBook(sbook)
   studyLoading = false
 
   window.umami?.track('startStudyArticle', {
@@ -80,63 +70,22 @@ const showBookDetail = computed(() => {
   return !(isAdd || isEdit)
 })
 
-async function init() {
+const { dict, loading } = useGetDict()
+
+onMounted(() => {
   if (route.query?.isAdd) {
     isAdd = true
     runtimeStore.editDict = getDefaultDict()
-  } else {
-    if (!runtimeStore.editDict.id) {
-      await router.push('/articles')
-    } else {
-      if (
-        !runtimeStore.editDict?.articles?.length &&
-        !runtimeStore.editDict?.custom &&
-        ![DictId.articleCollect].includes(runtimeStore.editDict.en_name || runtimeStore.editDict.id) &&
-        !runtimeStore.editDict?.is_default
-      ) {
-        loading = true
-        let r = await _getDictDataByUrl(runtimeStore.editDict, DictType.article)
-        runtimeStore.editDict = r
-      }
-
-      if (base.article.bookList.find(book => book.id === runtimeStore.editDict.id)) {
-        if (AppEnv.CAN_REQUEST) {
-          let res = await detail({ id: runtimeStore.editDict.id })
-          if (res.success) {
-            runtimeStore.editDict.statistics = res.data.statistics
-            if (res.data.articles.length) {
-              runtimeStore.editDict.articles = res.data.articles
-            }
-          }
-        }
-      }
-      selectArticle = runtimeStore.editDict.articles[0]
-      loading = false
-    }
   }
-}
-
-onMounted(() => {
-  init()
-
   window.addEventListener('resize', handleResize)
 })
-
-watch(
-  () => selectArticle.id,
-  () => {
-    if (displayMode === 'typing-style') {
-    }
-    positionTranslations()
-  }
-)
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
 function handleResize() {
-  if (displayMode === 'typing-style') {
+  if (displayMode === 'inline') {
     positionTranslations()
   }
 }
@@ -156,9 +105,9 @@ function reset() {
       let dict = book_list.value.find(v => v.url === runtimeStore.editDict.url) as Dict
       if (dict && dict.id) {
         dict = await _getDictDataByUrl(dict, DictType.article)
-        let rIndex = base.article.bookList.findIndex(v => v.id === runtimeStore.editDict.id)
+        let rIndex = store.article.bookList.findIndex(v => v.id === runtimeStore.editDict.id)
         if (rIndex > -1) {
-          let item = base.article.bookList[rIndex]
+          let item = store.article.bookList[rIndex]
           item.custom = false
           item.id = dict.id
           item.articles = dict.articles
@@ -211,9 +160,9 @@ const list = $computed(() => {
 
 let showTranslate = $ref(true)
 let startPlay = $ref(false)
-let displayMode = $ref<'normal' | 'typing-style'>('normal')
+let showDisplayMode = $ref(false)
+let displayMode = $ref<'card' | 'inline' | 'line'>('inline')
 let articleWrapperRef = $ref<HTMLElement>()
-const isMob = isMobile()
 
 const handleVolumeUpdate = (volume: number) => {
   settingStore.articleSoundVolume = volume
@@ -223,66 +172,31 @@ const handleSpeedUpdate = (speed: number) => {
   settingStore.articleSoundSpeed = speed
 }
 
-// 解析文本为段落和句子结构
-interface ParsedSentence {
-  text: string
-  translate: string
-}
+// 计算段落数量
+const paragraphCount = $computed(() => {
+  if (!selectArticle.text) return 0
+  return selectArticle.text.split('\n\n').filter(p => p.trim()).length
+})
 
-interface ParsedParagraph {
-  sentences: ParsedSentence[]
-}
-
-function parseTextToSections(text: string, textTranslate: string): ParsedParagraph[] {
-  if (!text) return []
-
-  // 按段落分割（双换行）
-  const textParagraphs = text.split('\n\n').filter(p => p.trim())
-  const translateParagraphs = textTranslate ? textTranslate.split('\n\n').filter(p => p.trim()) : []
-
-  // 句子分割正则：按句号、问号、感叹号分割，但保留标点
-  const sentenceRegex = /([^.!?]+[.!?]+)/g
-
-  return textParagraphs.map((para, paraIndex) => {
-    // 分割句子
-    const sentences = para.match(sentenceRegex) || [para]
-    const translateSentences = translateParagraphs[paraIndex]
-      ? translateParagraphs[paraIndex].match(sentenceRegex) || [translateParagraphs[paraIndex]]
-      : []
-
-    return {
-      sentences: sentences.map((sent, sentIndex) => ({
-        text: sent.trim(),
-        translate: translateSentences[sentIndex]?.trim() || '',
-      })),
-    }
-  })
-}
-
-// 计算解析后的文章结构
-const parsedArticle = $computed(() => {
-  if (!selectArticle.text || displayMode !== 'typing-style') return null
-  return parseTextToSections(selectArticle.text, selectArticle.textTranslate || '')
+// 判断是否应该在段落下显示译文（card 模式且段落数 > 1）
+const shouldShowInlineTranslation = $computed(() => {
+  return displayMode === 'card' && paragraphCount > 1
 })
 
 // 定位翻译到原文下方
 function positionTranslations() {
-  // if ( isMob || !articleWrapperRef) return
   _nextTick(() => {
     const articleRect = articleWrapperRef.getBoundingClientRect()
-    console.log('articleRect',articleRect)
     selectArticle.textTranslate.split('\n\n').forEach((paragraph, paraIndex) => {
       paragraph.split('\n').forEach((sentence, sentIndex) => {
-        debugger
         const location = `${paraIndex}-${sentIndex}`
-        const sentenceClassName = `.sentence-${location}`
+        const sentenceClassName = `.word-${location}-0`
         const sentenceEl = articleWrapperRef?.querySelector(sentenceClassName)
         const translateClassName = `.translate-${location}`
         const translateEl = articleWrapperRef?.querySelector(translateClassName) as HTMLDivElement
 
         if (sentenceEl && translateEl && sentence) {
           const sentenceRect = sentenceEl.getBoundingClientRect()
-          console.log('sentenceRect',sentenceEl.innerText, sentenceRect)
           translateEl.style.opacity = '1'
           translateEl.style.top = sentenceRect.top - articleRect.top + 24 + 'px'
           const spaceEl = translateEl.firstElementChild as HTMLElement
@@ -292,12 +206,12 @@ function positionTranslations() {
         }
       })
     })
-  }, 300)
+  })
 }
 
 // 监听显示模式和文章变化，重新定位翻译
 watch([() => displayMode, () => selectArticle.id, () => showTranslate], () => {
-  if (displayMode === 'typing-style') {
+  if (displayMode !== 'card') {
     positionTranslations()
   }
 })
@@ -305,194 +219,213 @@ watch([() => displayMode, () => selectArticle.id, () => showTranslate], () => {
 
 <template>
   <div class="center h-screen">
-    <div
-      class="mb-0 flex p-space box-border flex-col bg-second w-full 3xl:w-7/10 2xl:w-8/10 xl:w-full 2xl:card 2xl:h-[97vh] h-full"
-      v-if="showBookDetail"
-    >
-      <div class="dict-header flex justify-between items-center relative">
-        <div class="flex gap-space">
-          <BackIcon class="dict-back z-2" />
-          <div class="dict-title text-2xl text-align-center">{{ runtimeStore.editDict.name }}</div>
+    <div class="bg-second w-full 3xl:w-7/10 2xl:w-8/10 xl:w-full 2xl:card 2xl:h-[97vh] h-full overflow-hidden mb-0">
+      <div class="flex p-space box-border flex-col h-full" v-if="showBookDetail">
+        <div class="dict-header flex justify-between items-center relative">
+          <div class="flex gap-space">
+            <BackIcon class="dict-back z-2" />
+            <div class="dict-title text-2xl text-align-center">{{ runtimeStore.editDict.name }}</div>
+          </div>
+          <div class="dict-actions flex">
+            <BaseButton v-if="runtimeStore.editDict.custom && runtimeStore.editDict.url" type="info" @click="reset">
+              恢复默认
+            </BaseButton>
+            <BaseButton :loading="studyLoading || loading" type="info" @click="isEdit = true">编辑</BaseButton>
+            <BaseButton type="info" @click="router.push('batch-edit-article')">文章管理</BaseButton>
+            <BaseButton :loading="studyLoading || loading" @click="startPractice">学习</BaseButton>
+          </div>
         </div>
-        <div class="dict-actions flex">
-          <BaseButton v-if="runtimeStore.editDict.custom && runtimeStore.editDict.url" type="info" @click="reset">
-            恢复默认
-          </BaseButton>
-          <BaseButton :loading="studyLoading || loading" type="info" @click="isEdit = true">编辑</BaseButton>
-          <BaseButton type="info" @click="router.push('batch-edit-article')">文章管理</BaseButton>
-          <BaseButton :loading="studyLoading || loading" @click="startPractice">学习</BaseButton>
-        </div>
-      </div>
-      <div class="flex flex-1 overflow-hidden mt-3">
-        <div class="3xl:w-80 2xl:w-60 xl:w-55 lg:w-50 overflow-auto">
-          <ArticleList
-            :show-desc="true"
-            v-if="runtimeStore.editDict.length"
-            @click="handleCheckedChange"
-            :list="list"
-            :active-id="selectArticle.id"
-          >
-          </ArticleList>
-          <Empty v-else />
-        </div>
-        <div class="flex-1 shrink-0 pl-4 flex flex-col overflow-hidden">
-          <template v-if="selectArticle.id">
-            <template v-if="selectArticle.id === -1">
-              <div class="flex gap-4 mt-2">
-                <img
-                  :src="runtimeStore.editDict?.cover"
-                  class="w-30 rounded-md"
-                  v-if="runtimeStore.editDict?.cover"
-                  alt=""
-                />
-                <div class="text-lg">介绍：{{ runtimeStore.editDict.description }}</div>
-              </div>
-              <div class="text-base" v-if="totalSpend">总学习时长：{{ totalSpend }}</div>
-            </template>
-            <template v-else>
-              <div class="flex-1 space-y-10 overflow-auto pb-30">
-                <div>
-                  <div class="flex justify-between items-center relative">
-                    <span class="text-3xl">
-                      <span class="font-bold">{{ selectArticle.title }}</span>
-                      <span class="ml-6 text-2xl" v-if="showTranslate">{{ selectArticle.titleTranslate }}</span>
-                    </span>
-                    <div class="flex items-center gap-2 mr-4">
-                      <BaseIcon
-                        :title="`切换显示模式`"
-                        @click="displayMode = displayMode === 'normal' ? 'typing-style' : 'normal'"
-                      >
-                        <IconFluentTextParagraph16Regular v-if="displayMode === 'normal'" />
-                        <IconFluentTextAlignLeft16Regular v-else />
+        <div class="flex flex-1 overflow-hidden mt-3">
+          <div class="3xl:w-80 2xl:w-60 xl:w-55 lg:w-50 overflow-auto">
+            <ArticleList
+              :show-desc="true"
+              v-if="runtimeStore.editDict.length"
+              @click="handleCheckedChange"
+              :list="list"
+              :active-id="selectArticle.id"
+            >
+            </ArticleList>
+            <Empty v-else />
+          </div>
+          <div class="flex-1 shrink-0 pl-4 flex flex-col overflow-hidden">
+            <template v-if="selectArticle.id">
+              <template v-if="selectArticle.id === -1">
+                <div class="flex gap-4 mt-2">
+                  <img
+                    :src="runtimeStore.editDict?.cover"
+                    class="w-30 rounded-md"
+                    v-if="runtimeStore.editDict?.cover"
+                    alt=""
+                  />
+                  <div class="text-lg">介绍：{{ runtimeStore.editDict.description }}</div>
+                </div>
+                <div class="text-base" v-if="totalSpend">总学习时长：{{ totalSpend }}</div>
+              </template>
+              <template v-else>
+                <div class="flex-1 overflow-auto pb-30">
+                  <div>
+                    <div class="flex justify-between items-center relative">
+                      <span>
+                        <span class="text-4xl">{{ selectArticle.title }}</span>
+                        <span class="ml-6 text-2xl" v-if="showTranslate">{{ selectArticle.titleTranslate }}</span>
+                      </span>
+                      <div class="flex items-center gap-2 mr-4">
+                        <BaseIcon :title="`开关释义显示`" @click="showTranslate = !showTranslate">
+                          <IconFluentTranslate16Regular v-if="showTranslate" />
+                          <IconFluentTranslateOff16Regular v-else />
+                        </BaseIcon>
+                        <BaseIcon
+                          :disabled="!showTranslate"
+                          :title="`切换显示模式`"
+                          @click="showDisplayMode = !showDisplayMode"
+                        >
+                          <IconFluentTextAlignLeft16Regular />
+                        </BaseIcon>
+                      </div>
+                    </div>
+
+                    <div class="flex gap-1 mr-4 justify-end" v-if="showDisplayMode">
+                      <BaseIcon title="逐行显示" @click="displayMode = 'inline'">
+                        <IconFluentTextPositionThrough20Regular />
                       </BaseIcon>
-                      <BaseIcon :title="`开关释义显示`" @click="showTranslate = !showTranslate">
-                        <IconFluentTranslate16Regular v-if="showTranslate" />
-                        <IconFluentTranslateOff16Regular v-else />
+                      <BaseIcon title="单行显示" @click="displayMode = 'line'">
+                        <IconFluentTextAlignLeft16Regular />
+                      </BaseIcon>
+                      <BaseIcon title="对照显示" @click="displayMode = 'card'">
+                        <IconFluentAlignSpaceFitVertical20Regular />
                       </BaseIcon>
                     </div>
-                  </div>
-                  <div class="mt-2 text-2xl" v-if="selectArticle?.question?.text">
-                    Question: {{ selectArticle?.question?.text }}
-                  </div>
-                </div>
 
-                <template v-if="false">
-                  <!--                原文-->
-                  <div class="text-2xl en-article-family space-y-5" v-if="selectArticle.text">
-                    <!--                  <div class="break-words w-full" v-for="(t, i) in selectArticle.text.split('\n\n')">-->
-                    <!--                    <span v-for="(w, j) in t.split('\n')" :class="`sentence-${i}-${j}`" :key="`${i}-${j}`">-->
-                    <!--                      &lt;!&ndash;                      <span v-for="(s,n) in w.split(' ')">{{s}}</span>&ndash;&gt;-->
-                    <!--                      {{ w }}-->
-                    <!--                    </span>-->
-                    <!--                  </div>-->
-                    <div v-for="t in selectArticle.text.split('\n\n')">{{ t }}</div>
-                    <div class="text-right italic">{{ selectArticle?.quote?.text }}</div>
-                  </div>
-
-                  <!--                译文-->
-                  <template v-if="showTranslate">
-                    <div class="line"></div>
-                    <div class="text-xl line-height-normal space-y-5" v-if="selectArticle.textTranslate">
-                      <div class="mt-2" v-if="selectArticle?.question?.translate">
+                    <div class="mt-2 text-2xl" v-if="selectArticle?.question?.text">
+                      <div>Question: {{ selectArticle?.question?.text }}</div>
+                      <div
+                        class="text-xl color-translate-second"
+                        v-if="showTranslate && (displayMode !== 'card' || shouldShowInlineTranslation)"
+                      >
                         问题: {{ selectArticle?.question?.translate }}
                       </div>
-                      <!--                    <div class="break-words w-full" v-for="(t, i) in selectArticle.textTranslate.split('\n\n')">-->
-                      <!--                      <span v-for="(w, j) in t.split('\n')" :class="`translate-${i}-${j}`" :key="`${i}-${j}`">-->
-                      <!--                        &lt;!&ndash;                      <span v-for="(s,n) in w.split(' ')">{{s}}</span>&ndash;&gt;-->
-                      <!--                        {{ w }}-->
-                      <!--                      </span>-->
-                      <!--                    </div>-->
-                      <div v-for="t in selectArticle.textTranslate.split('\n\n')">{{ t }}</div>
-                      <div class="text-right italic">{{ selectArticle?.quote?.translate }}</div>
                     </div>
-                    <Empty v-else />
-                  </template>
-                </template>
+                  </div>
 
-                <!-- 打字式显示模式 -->
-                <template v-if="true">
-                  <div class="article-content" :class="[showTranslate && 'tall']" ref="articleWrapperRef">
+                  <div
+                    class="article-content mt-6"
+                    :class="[showTranslate && displayMode !== 'card' && 'tall']"
+                    ref="articleWrapperRef"
+                  >
                     <article>
-                      <div class="break-words w-full section" v-for="(t, i) in selectArticle.text.split('\n\n')">
-                        <span v-for="(w, j) in t.split('\n')" :class="`sentence-${i}-${j}`" :key="`${i}-${j}`"
-                          >{{ w }}
-                        </span>
-                      </div>
-                      <div class="text-right italic" v-if="selectArticle?.quote?.text">
-                        {{ selectArticle?.quote?.text }}
-                      </div>
-                    </article>
-                    <div class="translate" v-show="showTranslate">
-                      <div
-                        class="break-words w-full section"
-                        v-for="(t, i) in selectArticle.textTranslate.split('\n\n')"
-                      >
-                        <div v-for="(w, j) in t.split('\n')" :class="`row translate-${i}-${j}`" :key="`${i}-${j}`">
-                          <span class="space"></span>
-                          <span>{{ w }}</span>
+                      <template v-for="(t, i) in selectArticle.text.split('\n\n')" :key="`para-${i}`">
+                        <div class="article-row w-full mb-10">
+                          <span
+                            :class="displayMode === 'line' && 'block'"
+                            v-for="(w, j) in t.split('\n')"
+                            :key="`${i}-${j}`"
+                          >
+                            <span
+                              v-for="(s, n) in w.split(' ').filter(Boolean)"
+                              :class="`inline-block word-${i}-${j}-${n}`"
+                              :key="`${i}-${j}-${n}`"
+                              ><span>{{ s }}</span>
+                              <span class="space"></span>
+                            </span>
+                          </span>
+                        </div>
+
+                        <!-- 当 card 模式且段落数 > 1 时，在每个段落下显示对应译文 -->
+                        <div
+                          v-if="shouldShowInlineTranslation && showTranslate && selectArticle.textTranslate"
+                          class="trans-row text-xl color-translate-second -mt-7 mb-10"
+                        >
+                          <div v-if="selectArticle.textTranslate.split('\n\n')[i]">
+                            {{ selectArticle.textTranslate.split('\n\n')[i] }}
+                          </div>
+                        </div>
+                      </template>
+                      <div class="text-right italic">
+                        <div class="text-2xl" v-if="selectArticle?.quote?.text">{{ selectArticle?.quote?.text }}</div>
+                        <div
+                          class="trans-row text-xl color-translate-second"
+                          v-if="
+                            selectArticle?.quote?.translate &&
+                            showTranslate &&
+                            (displayMode !== 'card' || shouldShowInlineTranslation)
+                          "
+                        >
+                          {{ selectArticle?.quote?.translate }}
                         </div>
                       </div>
-                      <div class="text-right italic" v-if="selectArticle?.quote?.translate">
-                        {{ selectArticle?.quote?.translate }}
+                    </article>
+
+                    <template v-if="showTranslate && selectArticle.textTranslate">
+                      <div class="translate color-translate-second" v-if="displayMode !== 'card'">
+                        <div
+                          class="break-words w-full section"
+                          v-for="(t, i) in selectArticle.textTranslate.split('\n\n')"
+                        >
+                          <div v-for="(w, j) in t.split('\n')" :class="`row translate-${i}-${j}`" :key="`${i}-${j}`">
+                            <span class="space"></span>
+                            <span>{{ w }}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                      <template v-else>
+                        <!-- 当段落数 <= 1 时，保持原样在文章末尾显示译文 -->
+                        <template v-if="!shouldShowInlineTranslation">
+                          <div class="line my-10"></div>
+                          <div class="text-xl line-height-normal space-y-5">
+                            <div class="mt-2" v-if="selectArticle?.question?.translate">
+                              问题: {{ selectArticle?.question?.translate }}
+                            </div>
+                            <div class="trans-row" v-for="t in selectArticle.textTranslate.split('\n\n')">{{ t }}</div>
+                            <div class="trans-row text-right italic">{{ selectArticle?.quote?.translate }}</div>
+                          </div>
+                        </template>
+                      </template>
+                    </template>
                   </div>
-                  <!-- 移动端显示翻译 -->
-                  <template v-if="isMob && showTranslate">
-                    <div
-                      class="sentence-translate-mobile"
-                      v-for="(paragraph, paraIndex) in parsedArticle"
-                      :key="`m-${paraIndex}`"
-                    >
-                      <div v-for="(sentence, sentIndex) in paragraph.sentences" :key="`${paraIndex}-${sentIndex}`">
-                        <div v-if="sentence.translate" class="mt-2">{{ sentence.translate }}</div>
+                  <template v-if="currentPractice.length">
+                    <div class="line my-10"></div>
+                    <div class="font-family text-base pr-2">
+                      <div class="text-2xl font-bold">学习记录</div>
+                      <div class="mt-1 mb-3">总学习时长：{{ msToHourMinute(total(currentPractice, 'spend')) }}</div>
+                      <div
+                        class="item border border-item border-solid mt-2 p-2 bg-[var(--bg-history)] rounded-md flex justify-between"
+                        v-for="i in currentPractice"
+                      >
+                        <span class="color-gray">{{ _dateFormat(i.startDate) }}</span>
+                        <span>{{ msToHourMinute(i.spend) }}</span>
                       </div>
                     </div>
                   </template>
-                </template>
-                <template v-if="currentPractice.length">
-                  <div class="line"></div>
-                  <div class="font-family text-base pr-2">
-                    <div class="text-2xl font-bold">学习记录</div>
-                    <div class="mt-1 mb-3">总学习时长：{{ msToHourMinute(total(currentPractice, 'spend')) }}</div>
-                    <div
-                      class="item border border-item border-solid mt-2 p-2 bg-[var(--bg-history)] rounded-md flex justify-between"
-                      v-for="i in currentPractice"
-                    >
-                      <span class="color-gray">{{ _dateFormat(i.startDate) }}</span>
-                      <span>{{ msToHourMinute(i.spend) }}</span>
-                    </div>
-                  </div>
-                </template>
-              </div>
-              <div class="border-t-1 border-t-gray-300 border-solid border-0 center gap-2 pt-4">
-                <ArticleAudio
-                  :article="selectArticle"
-                  @update-speed="handleSpeedUpdate"
-                  @update-volume="handleVolumeUpdate"
-                  :autoplay="settingStore.articleAutoPlayNext && startPlay"
-                  @ended="next"
-                />
-                <div class="flex items-center gap-1">
-                  <span>结束后播放下一篇</span>
-                  <Switch v-model="settingStore.articleAutoPlayNext" />
                 </div>
-              </div>
+                <div class="border-t-1 border-t-gray-300 border-solid border-0 center gap-2 pt-4">
+                  <ArticleAudio
+                    :article="selectArticle"
+                    @update-speed="handleSpeedUpdate"
+                    @update-volume="handleVolumeUpdate"
+                    :autoplay="settingStore.articleAutoPlayNext && startPlay"
+                    @ended="next"
+                  />
+                  <div class="flex items-center gap-1">
+                    <span>结束后播放下一篇</span>
+                    <Switch v-model="settingStore.articleAutoPlayNext" />
+                  </div>
+                </div>
+              </template>
             </template>
-          </template>
-          <Empty v-else />
+            <Empty v-else />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="card mb-0 dict-detail-card" v-else>
-      <div class="dict-header flex justify-between items-center relative">
-        <BackIcon class="dict-back z-2" @click="isAdd ? $router.back() : (isEdit = false)" />
-        <div class="dict-title absolute text-2xl text-align-center w-full">
-          {{ runtimeStore.editDict.id ? '修改' : '创建' }}书籍
+      <div class="card mb-0 dict-detail-card" v-else>
+        <div class="dict-header flex justify-between items-center relative">
+          <BackIcon class="dict-back z-2" @click="isAdd ? $router.back() : (isEdit = false)" />
+          <div class="dict-title absolute text-2xl text-align-center w-full">
+            {{ runtimeStore.editDict.id ? '修改' : '创建' }}书籍
+          </div>
         </div>
-      </div>
-      <div class="center">
-        <EditBook :is-add="isAdd" :is-book="true" @close="formClose" @submit="isEdit = isAdd = false" />
+        <div class="center">
+          <EditBook :is-add="isAdd" :is-book="true" @close="formClose" @submit="isEdit = isAdd = false" />
+        </div>
       </div>
     </div>
   </div>
@@ -517,58 +450,42 @@ $article-lh: 2.4;
 
 .article-content {
   position: relative;
-  color: var(--color-article);
   font-size: 1.6rem;
 
   &.tall {
     article {
       line-height: $article-lh;
+      color: var(--color-article);
     }
   }
 
-  article {
+  .article-row {
     word-break: keep-all;
     word-wrap: break-word;
     white-space: pre-wrap;
-    font-family: var(--en-article-family);
+  }
 
-    .section {
-      margin-bottom: 1.5rem;
+  .trans-row {
+    @apply cn-article-family font-bold;
+  }
 
-      .sentence {
-        transition: all 0.3s;
-        display: inline;
-      }
-    }
+  article {
+    @apply en-article-family;
   }
 
   .translate {
-    pointer-events: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    font-size: 1.2rem;
+    @apply absolute top-0 left-0 h-full w-full text-xl pointer-events-none font-bold cn-article-family;
     line-height: $translate-lh;
     letter-spacing: 0.2rem;
-    font-family: var(--zh-article-family);
-    font-weight: bold;
-    color: #818181;
 
     .row {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      opacity: 0;
-      transition: all 0.3s;
-
-      .space {
-        transition: all 0.3s;
-        display: inline-block;
-      }
+      @apply absolute left-0 w-full opacity-0 transition-all duration-300;
     }
   }
+}
+
+.space {
+  @apply inline-block w-2 transition-all duration-300;
 }
 
 .sentence-translate-mobile {

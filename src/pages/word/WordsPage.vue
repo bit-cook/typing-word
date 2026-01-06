@@ -6,7 +6,6 @@ import {
   _getAccomplishDate,
   _getDictDataByUrl,
   _nextTick,
-  cloneDeep,
   isMobile,
   loadJsLib,
   resourceWrap,
@@ -432,27 +431,27 @@ const systemPracticeText = $computed(() => {
                 随机复习
               </BaseButton>
 
-              <BaseButton
-                class="w-full"
-                v-if="settingStore.wordPracticeMode !== WordPracticeMode.IdentifyOnly"
-                @click="startPractice(WordPracticeMode.IdentifyOnly, true)"
-              >
-                {{ WordPracticeModeNameMap[WordPracticeMode.IdentifyOnly] }}
-              </BaseButton>
-              <BaseButton
-                class="w-full"
-                v-if="settingStore.wordPracticeMode !== WordPracticeMode.ListenOnly"
-                @click="startPractice(WordPracticeMode.ListenOnly, true)"
-              >
-                {{ WordPracticeModeNameMap[WordPracticeMode.ListenOnly] }}
-              </BaseButton>
-              <BaseButton
-                class="w-full"
-                v-if="settingStore.wordPracticeMode !== WordPracticeMode.DictationOnly"
-                @click="startPractice(WordPracticeMode.DictationOnly, true)"
-              >
-                {{ WordPracticeModeNameMap[WordPracticeMode.DictationOnly] }}
-              </BaseButton>
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.IdentifyOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.IdentifyOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.IdentifyOnly] }}-->
+              <!--              </BaseButton>-->
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.ListenOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.ListenOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.ListenOnly] }}-->
+              <!--              </BaseButton>-->
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.DictationOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.DictationOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.DictationOnly] }}-->
+              <!--              </BaseButton>-->
             </template>
           </OptionButton>
 

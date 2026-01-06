@@ -1,8 +1,13 @@
-import { Article, TaskWords, Word, WordPracticeMode } from '@/types/types.ts'
+import { Article, Dict, DictId, DictType, TaskWords, Word } from '@/types/types.ts'
 import { useBaseStore } from '@/stores/base.ts'
 import { useSettingStore } from '@/stores/setting.ts'
-import { getDefaultWord } from '@/types/func.ts'
-import { cloneDeep, getRandomN, shuffle, splitIntoN } from '@/utils'
+import { getDefaultDict, getDefaultWord } from '@/types/func.ts'
+import { _getDictDataByUrl, cloneDeep, getRandomN, resourceWrap, shuffle, splitIntoN } from '@/utils'
+import { onMounted, watch } from 'vue'
+import { AppEnv, DICT_LIST } from '@/config/env.ts'
+import { detail } from '@/apis'
+import { useRuntimeStore } from '@/stores/runtime.ts'
+import { useRoute, useRouter } from 'vue-router'
 
 export function useWordOptions() {
   const store = useBaseStore()
@@ -12,9 +17,7 @@ export function useWordOptions() {
   }
 
   function toggleWordCollect(val: Word) {
-    let rIndex = store.collectWord.words.findIndex(
-      v => v.word.toLowerCase() === val.word.toLowerCase()
-    )
+    let rIndex = store.collectWord.words.findIndex(v => v.word.toLowerCase() === val.word.toLowerCase())
     if (rIndex > -1) {
       store.collectWord.words.splice(rIndex, 1)
     } else {
@@ -114,9 +117,7 @@ export function getCurrentStudyWord(): TaskWords {
     if (complete && isEnd) {
       //复习比最小是1
       let ratio = settingStore.wordReviewRatio || 1
-      let ignoreList = [store.allIgnoreWords, store.knownWords][
-        settingStore.ignoreSimpleWord ? 0 : 1
-      ]
+      let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
       // 先将可用词表全部随机，再按需过滤忽略列表，只取到目标数量为止
       let shuffled = shuffle(cloneDeep(dict.words))
       let count = 0
@@ -204,7 +205,7 @@ export function getCurrentStudyWord(): TaskWords {
     }
 
     //如果已完成，那么合并写词和复习词
-    if(complete){
+    if (complete) {
       // data.new = []
       // data.review = data.review.concat(data.write)
       // data.write = []
@@ -214,4 +215,76 @@ export function getCurrentStudyWord(): TaskWords {
   // console.log('data-review', data.review.map(v => v.word))
   // console.log('data-write', data.write.map(v => v.word))
   return data
+}
+
+export function useGetDict() {
+  const store = useBaseStore()
+  const runtimeStore = useRuntimeStore()
+  let loading = $ref(false)
+  const route = useRoute()
+  const router = useRouter()
+
+  watch(
+    [() => store.load, () => loading],
+    ([a, b]) => {
+      if (a && b) loadDict()
+    },
+    { immediate: true }
+  )
+
+  onMounted(() => {
+    if (!runtimeStore.editDict?.id) {
+      let dictId = route.params?.id
+      if (!dictId) {
+        return router.push('/articles')
+      }
+      loading = true
+    } else {
+      loadDict(runtimeStore.editDict)
+    }
+  })
+
+  async function loadDict(dict?: Dict) {
+    // console.log('load好了开始加载')
+    if (!dict) {
+      dict = getDefaultDict()
+      let dictId = route.query.id
+      //先在自己的词典列表里面找，如果没有再在资源列表里面找
+      dict = store.article.bookList.find(v => v.id === dictId)
+      let r = await fetch(resourceWrap(DICT_LIST.WORD.ALL))
+      let dict_list = await r.json()
+      if (!dict) dict = dict_list.flat().find(v => v.id === dictId) as Dict
+    }
+    if (dict && dict.id) {
+      if (
+        !dict?.articles?.length &&
+        !dict?.custom &&
+        ![DictId.articleCollect].includes(dict.en_name || dict.id) &&
+        !dict?.is_default
+      ) {
+        loading = true
+        let r = await _getDictDataByUrl(dict, DictType.article)
+        runtimeStore.editDict = r
+      }
+      if (store.article.bookList.find(book => book.id === runtimeStore.editDict.id)) {
+        if (AppEnv.CAN_REQUEST) {
+          let res = await detail({ id: runtimeStore.editDict.id })
+          if (res.success) {
+            runtimeStore.editDict.statistics = res.data.statistics
+            if (res.data.articles.length) {
+              runtimeStore.editDict.articles = res.data.articles
+            }
+          }
+        }
+      }
+      loading = false
+    } else {
+      // router.push('/articles')
+    }
+  }
+
+  return {
+    dict: runtimeStore.editDict,
+    loading,
+  }
 }

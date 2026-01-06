@@ -163,7 +163,7 @@ function toggleSelect(item) {
 
 async function goBookDetail(val: DictResource) {
   runtimeStore.editDict = getDefaultDict(val)
-  nav('book-detail')
+  nav('book-detail',{id: val.id})
 }
 
 const totalSpend = $computed(() => {

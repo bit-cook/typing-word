@@ -1,6 +1,10 @@
 <script setup lang="ts">
 let logList = [
   {
+    date: '2026/01/06',
+    content: '优化书籍详情页面',
+  },
+  {
     date: '2025/12/30',
     content: '移除“继续默写”选项',
   },
