@@ -128,8 +128,17 @@ html.dark {
     --panel-width: 20rem;
     --space: 0.5rem;
 
-    --article-toolbar-width: 50rem;
-    --article-panel-width: 18rem;
+    --article-width: 60vw;
+    --article-toolbar-width: 60vw;
+    --article-panel-width: 17rem;
+  }
+}
+
+@media (max-width: 1560px) {
+  :root {
+    --article-width: 60vw;
+    --article-toolbar-width: 60vw;
+    --article-panel-width: 15rem;
   }
 }
 
@@ -140,7 +149,17 @@ html.dark {
     --stat-gap: 0.5rem;
     --space: 0.3rem;
 
-    --article-toolbar-width: 40rem;
+
+    --article-width: 70vw;
+    --article-toolbar-width: 70vw;
+    --article-panel-width: 13rem;
+  }
+}
+
+@media (max-width: 1150px) {
+  :root {
+    --article-width: 85vw;
+    --article-toolbar-width: 85vw;
     --article-panel-width: 16rem;
   }
 }
