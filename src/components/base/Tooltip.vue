@@ -63,7 +63,6 @@ export default {
       </Transition>
 
       <DefaultNode
-          onClick={() => this.show = false}
           onmouseenter={(e) => this.showPop(e)}
           onmouseleave={() => this.show = false}
       />
@@ -73,14 +72,8 @@ export default {
 </script>
 <style lang="scss" scoped>
 .tip {
-  position: fixed;
-  font-size: 1rem;
-  z-index: 9999;
-  border-radius: .3rem;
-  padding: 0.4rem .8rem;
-  color: var(--color-font-1);
   background: var(--color-tooltip-bg);
   max-width: 22rem;
-  box-shadow: 0 0 6px 1px var(--color-tooltip-shadow);
+  @apply fixed z-9999 shadow-xl border-item-solid rounded-md px-2.5 py-1.5;
 }
 </style>

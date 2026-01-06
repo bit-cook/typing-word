@@ -1,12 +1,12 @@
 <script setup lang="tsx">
 import {useSettingStore} from "@/stores/setting.ts";
 import Space from "@/pages/article/components/Space.vue";
-import { PracticeArticleWordType } from "@/types/types.ts";
-//引入这个编译就报错
-// import {ArticleWord} from "@/types/types.ts";
+
+import {PracticeArticleWordType} from "@/types/enum.ts";
+import type {ArticleWord} from "@/types/types.ts";
 
 const props = defineProps<{
-  word: any,
+  word: ArticleWord,
   isTyping: boolean,
 }>()
 const settingStore = useSettingStore()

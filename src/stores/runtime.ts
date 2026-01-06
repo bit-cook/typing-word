@@ -1,5 +1,5 @@
 import {defineStore} from "pinia"
-import {Dict} from "@/types/types.ts";
+import type {Dict} from "@/types/types.ts";
 import {getDefaultDict} from "@/types/func.ts";
 
 export interface RuntimeState {

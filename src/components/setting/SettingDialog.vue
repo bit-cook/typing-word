@@ -3,7 +3,7 @@ import { defineAsyncComponent } from "vue";
 import BaseIcon from "@/components/BaseIcon.vue";
 import CommonSetting from "@/components/setting/CommonSetting.vue";
 import WordSetting from "@/components/setting/WordSetting.vue";
-import ArticleSettting from "@/components/setting/ArticleSettting.vue";
+import ArticleSetting from "@/components/setting/ArticleSetting.vue";
 
 const Dialog = defineAsyncComponent(() => import('@/components/dialog/Dialog.vue'))
 
@@ -39,7 +39,7 @@ let show = $ref(false)
         <div class="content">
           <CommonSetting v-if="tabIndex === 0"/>
           <WordSetting v-if="tabIndex === 1"/>
-          <ArticleSettting v-if="tabIndex === 2"/>
+          <ArticleSetting v-if="tabIndex === 2"/>
         </div>
       </div>
     </div>
@@ -58,7 +58,7 @@ let show = $ref(false)
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    border-right: 1px solid gainsboro;
+    border-right: 2px solid var(--color-line);
 
     .tabs {
       padding: 1rem;

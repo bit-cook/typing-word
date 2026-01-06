@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { _nextTick, groupBy, isMobile, loadJsLib, resourceWrap, useNav } from "@/utils";
 import BasePage from "@/components/BasePage.vue";
-import { DictResource } from "@/types/types.ts";
+import type { DictResource } from "@/types/types.ts";
 import { useRuntimeStore } from "@/stores/runtime.ts";
 import BaseIcon from "@/components/BaseIcon.vue";
 import Empty from "@/components/Empty.vue";
@@ -58,7 +58,7 @@ const groupedByCategoryAndTag = $computed(() => {
     data.push([key, groupByDictTags(value)])
   }
   [data[2], data[3]] = [data[3], data[2]];
-  console.log('data', data)
+  // console.log('data', data)
   return data
 })
 
@@ -138,7 +138,7 @@ watch(dict_list, (val) => {
             v-if="searchList.length "
             @selectDict="selectDict"
             :list="searchList"
-            quantifier="个词"
+            quantifier="词"
             :select-id="'-1'"/>
         <Empty v-else text="没有相关词典"/>
       </div>
@@ -147,7 +147,7 @@ watch(dict_list, (val) => {
             v-for="item in groupedByCategoryAndTag"
             :select-id="store.sdict.id"
             @selectDict="selectDict"
-            quantifier="个词"
+            quantifier="词"
             :groupByTag="item[1]"
             :category="item[0]"
         />

@@ -1,49 +1,49 @@
 import { defineStore } from "pinia"
 import { checkAndUpgradeSaveSetting, cloneDeep } from "@/utils";
-import { DefaultShortcutKeyMap, WordPracticeMode, WordPracticeType } from "@/types/types.ts";
 import { get } from "idb-keyval";
-import { AppEnv, SAVE_SETTING_KEY } from "@/config/env.ts";
-import { getSetting } from "@/apis";
+import { AppEnv, DefaultShortcutKeyMap, SAVE_SETTING_KEY } from '@/config/env.ts'
+import { getSetting } from '@/apis'
+import { WordPracticeMode, WordPracticeType } from '@/types/enum.ts'
 
 export interface SettingState {
-  soundType: string,
+  soundType: string
 
-  wordSound: boolean,
-  wordSoundVolume: number,
-  wordSoundSpeed: number,
-  wordReviewRatio:number //单词复习比例
+  wordSound: boolean
+  wordSoundVolume: number
+  wordSoundSpeed: number
+  wordReviewRatio: number //单词复习比例
 
-  articleSound: boolean,
-  articleAutoPlayNext: boolean,
-  articleSoundVolume: number,
-  articleSoundSpeed: number,
+  articleSound: boolean
+  articleAutoPlayNext: boolean
+  articleSoundVolume: number
+  articleSoundSpeed: number
 
-  keyboardSound: boolean,
-  keyboardSoundVolume: number,
-  keyboardSoundFile: string,
+  keyboardSound: boolean
+  keyboardSoundVolume: number
+  keyboardSoundFile: string
 
-  effectSound: boolean,
-  effectSoundVolume: number,
+  effectSound: boolean
+  effectSoundVolume: number
 
-  repeatCount: number, //重复次数
-  repeatCustomCount?: number, //自定义重复次数
-  dictation: boolean,//显示默写
-  translate: boolean, //显示翻译
+  repeatCount: number //重复次数
+  repeatCustomCount?: number //自定义重复次数
+  dictation: boolean //显示默写
+  translate: boolean //显示翻译
   showNearWord: boolean //显示上/下一个词
   ignoreCase: boolean //忽略大小写
   allowWordTip: boolean //默写时时否允许查看提示
   waitTimeForChangeWord: number // 切下一个词的等待时间
   fontSize: {
-    articleForeignFontSize: number,
-    articleTranslateFontSize: number,
-    wordForeignFontSize: number,
-    wordTranslateFontSize: number,
-  },
-  showToolbar: boolean, //收起/展开工具栏
-  showPanel: boolean, // 收起/展开面板
-  sideExpand: boolean, //收起/展开左侧侧边栏
-  theme: string,
-  shortcutKeyMap: Record<string, string>,
+    articleForeignFontSize: number
+    articleTranslateFontSize: number
+    wordForeignFontSize: number
+    wordTranslateFontSize: number
+  }
+  showToolbar: boolean //收起/展开工具栏
+  showPanel: boolean // 收起/展开面板
+  sideExpand: boolean //收起/展开左侧侧边栏
+  theme: string
+  shortcutKeyMap: Record<string, string>
   first: boolean
   firstTime: number
   load: boolean

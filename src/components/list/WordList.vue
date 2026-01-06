@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import BaseList from "@/components/list/BaseList.vue";
-import { Word } from "@/types/types.ts";
+import type { Word } from "@/types/types.ts";
 import WordItem from "../WordItem.vue";
 
 withDefaults(defineProps<{

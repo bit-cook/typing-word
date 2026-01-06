@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {computed, provide} from "vue"
-import {ShortcutKey} from "@/types/types.ts"
 import {useSettingStore} from "@/stores/setting.ts";
 import Close from "@/components/icon/Close.vue";
 import Tooltip from "@/components/base/Tooltip.vue";
+import {ShortcutKey} from "@/types/enum.ts";
 
 const settingStore = useSettingStore()
 let tabIndex = $ref(0)
@@ -33,14 +33,9 @@ provide('tabIndex', computed(() => tabIndex))
 <style scoped lang="scss">
 
 .panel {
-  border-radius: .5rem;
   width: var(--panel-width);
   background: var(--color-second);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--color-item-border);
-  box-shadow: var(--shadow);
+  @apply shadow-lg flex flex-col h-full rounded-xl;
 }
 
 // 移动端适配

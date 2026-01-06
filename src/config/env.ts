@@ -1,4 +1,5 @@
 import { offset } from '@floating-ui/dom'
+import { ShortcutKey, WordPracticeMode, WordPracticeStage } from '@/types/enum.ts'
 
 export const GITHUB = 'https://github.com/zyronon/TypeWords'
 export const Host = 'typewords.cc'
@@ -68,15 +69,6 @@ export const EXPORT_DATA_KEY = {
 }
 export const LOCAL_FILE_KEY = 'typing-word-files'
 
-export const PracticeSaveWordKey = {
-  key: 'PracticeSaveWord',
-  version: 1,
-}
-export const PracticeSaveArticleKey = {
-  key: 'PracticeSaveArticle',
-  version: 1,
-}
-
 export const TourConfig = {
   useModalOverlay: true,
   defaultStepOptions: {
@@ -92,6 +84,7 @@ export const TourConfig = {
   total: 7,
 }
 
+export const IS_DEV = import.meta.env.MODE === 'development'
 export const LIB_JS_URL = {
   SHEPHERD:
     import.meta.env.MODE === 'development'
@@ -100,4 +93,104 @@ export const LIB_JS_URL = {
   SNAPDOM: `${Origin}/libs/snapdom.min.js`,
   JSZIP: `${Origin}/libs/jszip.min.js`,
   XLSX: `${Origin}/libs/xlsx.full.min.js`,
+}
+export const PronunciationApi = 'https://dict.youdao.com/dictvoice?audio='
+export const DefaultShortcutKeyMap = {
+  [ShortcutKey.EditArticle]: 'Ctrl+E',
+  [ShortcutKey.ShowWord]: 'Escape',
+  [ShortcutKey.Previous]: 'Alt+⬅',
+  [ShortcutKey.Next]: 'Tab',
+  [ShortcutKey.ToggleSimple]: '`',
+  [ShortcutKey.ToggleCollect]: 'Enter',
+  [ShortcutKey.PreviousChapter]: 'Ctrl+⬅',
+  [ShortcutKey.NextChapter]: 'Ctrl+➡',
+  [ShortcutKey.RepeatChapter]: 'Ctrl+Enter',
+  [ShortcutKey.DictationChapter]: 'Alt+Enter',
+  [ShortcutKey.PlayWordPronunciation]: 'Ctrl+P',
+  [ShortcutKey.ToggleShowTranslate]: 'Ctrl+Z',
+  [ShortcutKey.ToggleDictation]: 'Ctrl+I',
+  [ShortcutKey.ToggleTheme]: 'Ctrl+Q',
+  [ShortcutKey.ToggleConciseMode]: 'Ctrl+M',
+  [ShortcutKey.TogglePanel]: 'Ctrl+L',
+  [ShortcutKey.RandomWrite]: 'Ctrl+R',
+  [ShortcutKey.KnowWord]: '1',
+  [ShortcutKey.UnknownWord]: '2',
+}
+export const SlideType = {
+  HORIZONTAL: 0,
+  VERTICAL: 1,
+}
+export const WordPracticeModeStageMap: Record<WordPracticeMode, WordPracticeStage[]> = {
+  [WordPracticeMode.Free]: [WordPracticeStage.FollowWriteNewWord, WordPracticeStage.Complete],
+  [WordPracticeMode.IdentifyOnly]: [
+    WordPracticeStage.IdentifyNewWord,
+    WordPracticeStage.IdentifyReview,
+    WordPracticeStage.IdentifyReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.DictationOnly]: [
+    WordPracticeStage.DictationNewWord,
+    WordPracticeStage.DictationReview,
+    WordPracticeStage.DictationReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.ListenOnly]: [
+    WordPracticeStage.ListenNewWord,
+    WordPracticeStage.ListenReview,
+    WordPracticeStage.ListenReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.System]: [
+    WordPracticeStage.FollowWriteNewWord,
+    WordPracticeStage.ListenNewWord,
+    WordPracticeStage.DictationNewWord,
+    WordPracticeStage.IdentifyReview,
+    WordPracticeStage.ListenReview,
+    WordPracticeStage.DictationReview,
+    WordPracticeStage.IdentifyReviewAll,
+    WordPracticeStage.ListenReviewAll,
+    WordPracticeStage.DictationReviewAll,
+    WordPracticeStage.Complete,
+  ],
+  [WordPracticeMode.Shuffle]: [WordPracticeStage.Shuffle, WordPracticeStage.Complete],
+  [WordPracticeMode.Review]: [
+    WordPracticeStage.IdentifyReview,
+    WordPracticeStage.ListenReview,
+    WordPracticeStage.DictationReview,
+    WordPracticeStage.IdentifyReviewAll,
+    WordPracticeStage.ListenReviewAll,
+    WordPracticeStage.DictationReviewAll,
+    WordPracticeStage.Complete,
+  ],
+}
+export const WordPracticeStageNameMap: Record<WordPracticeStage, string> = {
+  [WordPracticeStage.FollowWriteNewWord]: '跟写新词',
+  [WordPracticeStage.IdentifyNewWord]: '自测新词',
+  [WordPracticeStage.ListenNewWord]: '听写新词',
+  [WordPracticeStage.DictationNewWord]: '默写新词',
+  [WordPracticeStage.FollowWriteReview]: '跟写上次学习',
+  [WordPracticeStage.IdentifyReview]: '自测上次学习',
+  [WordPracticeStage.ListenReview]: '听写上次学习',
+  [WordPracticeStage.DictationReview]: '默写上次学习',
+  [WordPracticeStage.FollowWriteReviewAll]: '跟写之前学习',
+  [WordPracticeStage.IdentifyReviewAll]: '自测之前学习',
+  [WordPracticeStage.ListenReviewAll]: '听写之前学习',
+  [WordPracticeStage.DictationReviewAll]: '默写之前学习',
+  [WordPracticeStage.Complete]: '完成学习',
+  [WordPracticeStage.Shuffle]: '随机复习',
+}
+export const WordPracticeModeNameMap: Record<WordPracticeMode, string> = {
+  [WordPracticeMode.System]: '学习',
+  [WordPracticeMode.Free]: '自由练习',
+  [WordPracticeMode.IdentifyOnly]: '自测',
+  [WordPracticeMode.DictationOnly]: '默写',
+  [WordPracticeMode.ListenOnly]: '听写',
+  [WordPracticeMode.Shuffle]: '随机复习',
+  [WordPracticeMode.Review]: '复习',
+}
+export class DictId {
+  static wordCollect = 'wordCollect'
+  static wordWrong = 'wordWrong'
+  static wordKnown = 'wordKnown'
+  static articleCollect = 'articleCollect'
 }

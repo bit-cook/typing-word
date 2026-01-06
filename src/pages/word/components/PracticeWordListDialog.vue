@@ -3,7 +3,7 @@
 import BaseTable from "@/components/BaseTable.vue";
 import WordItem from "@/components/WordItem.vue";
 import { defineAsyncComponent } from "vue";
-import { TaskWords } from "@/types/types.ts";
+import type { TaskWords } from "@/types/types.ts";
 import Checkbox from "@/components/base/checkbox/Checkbox.vue";
 
 const Dialog = defineAsyncComponent(() => import('@/components/dialog/Dialog.vue'))

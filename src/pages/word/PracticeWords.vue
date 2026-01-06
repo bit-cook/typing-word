@@ -1,35 +1,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
 
-import Statistics from '@/pages/word/Statistics.vue'
+import Statistics from '@/pages/word/components/Statistics.vue'
 import { emitter, EventKey, useEvents } from '@/utils/eventBus.ts'
 import { useSettingStore } from '@/stores/setting.ts'
 import { useRuntimeStore } from '@/stores/runtime.ts'
-import {
-  Dict,
-  PracticeData,
-  ShortcutKey,
-  TaskWords,
-  Word,
-  WordPracticeMode,
-  WordPracticeType,
-} from '@/types/types.ts'
-import {
-  useDisableEventListener,
-  useOnKeyboardEventListener,
-  useStartKeyboardEventListener,
-} from '@/hooks/event.ts'
+import type { Dict, PracticeData, TaskWords, Word } from '@/types/types.ts'
+import { useDisableEventListener, useOnKeyboardEventListener, useStartKeyboardEventListener } from '@/hooks/event.ts'
 import useTheme from '@/hooks/theme.ts'
 import { getCurrentStudyWord, useWordOptions } from '@/hooks/dict.ts'
-import {
-  _getDictDataByUrl,
-  _nextTick,
-  cloneDeep,
-  isMobile,
-  loadJsLib,
-  resourceWrap,
-  shuffle,
-} from '@/utils'
+import { _getDictDataByUrl, _nextTick, cloneDeep, isMobile, loadJsLib, resourceWrap, shuffle } from '@/utils'
 import { useRoute, useRouter } from 'vue-router'
 import Footer from '@/pages/word/components/Footer.vue'
 import Panel from '@/components/Panel.vue'
@@ -45,10 +25,13 @@ import { getDefaultDict, getDefaultWord } from '@/types/func.ts'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import PracticeLayout from '@/components/PracticeLayout.vue'
 
-import { AppEnv, DICT_LIST, LIB_JS_URL, PracticeSaveWordKey, TourConfig } from '@/config/env.ts'
+import { AppEnv, DICT_LIST, LIB_JS_URL, TourConfig, WordPracticeModeStageMap } from '@/config/env.ts'
 import { ToastInstance } from '@/components/base/toast/type.ts'
 import { watchOnce } from '@vueuse/core'
 import { setUserDictProp } from '@/apis'
+import GroupList from '@/pages/word/components/GroupList.vue'
+import { getPracticeWordCache, setPracticeWordCache } from '@/utils/cache.ts'
+import { ShortcutKey, WordPracticeMode, WordPracticeStage, WordPracticeType } from '@/types/enum.ts'
 
 const { isWordCollect, toggleWordCollect, isWordSimple, toggleWordSimple } = useWordOptions()
 const settingStore = useSettingStore()
@@ -113,11 +96,11 @@ async function loadDict() {
 }
 
 watch(
-    () => store.load,
-    n => {
-      if (n && loading) loadDict()
-    },
-    { immediate: true }
+  () => store.load,
+  n => {
+    if (n && loading) loadDict()
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
@@ -138,111 +121,137 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  let cache = getPracticeWordCache()
+  if (cache) {
+    savePracticeData()
+  }
   timer && clearInterval(timer)
 })
 
 watchOnce(
-    () => data.words.length,
-    (newVal, oldVal) => {
-      //如果是从无值变有值，代表是开始
-      if (!oldVal && newVal) {
-        _nextTick(async () => {
-          const Shepherd = await loadJsLib('Shepherd', LIB_JS_URL.SHEPHERD)
-          const tour = new Shepherd.Tour(TourConfig)
-          tour.on('cancel', () => {
-            localStorage.setItem('tour-guide', '1')
-          })
-          tour.addStep({
-            id: 'step5',
-            text: '这里可以练习拼写单词，只需要按下键盘上对应的按键即可，没有输入框！',
-            attachTo: { element: '#word', on: 'bottom' },
-            buttons: [
-              {
-                text: `下一步（5/${TourConfig.total}）`,
-                action: tour.next,
-              },
-            ],
-          })
+  () => data.words.length,
+  (newVal, oldVal) => {
+    //如果是从无值变有值，代表是开始
+    if (!oldVal && newVal) {
+      _nextTick(async () => {
+        const Shepherd = await loadJsLib('Shepherd', LIB_JS_URL.SHEPHERD)
+        const tour = new Shepherd.Tour(TourConfig)
+        tour.on('cancel', () => {
+          localStorage.setItem('tour-guide', '1')
+        })
+        tour.addStep({
+          id: 'step5',
+          text: '这里可以练习拼写单词，只需要按下键盘上对应的按键即可，没有输入框！',
+          attachTo: { element: '#word', on: 'bottom' },
+          buttons: [
+            {
+              text: `下一步（5/${TourConfig.total}）`,
+              action: tour.next,
+            },
+          ],
+        })
 
-          tour.addStep({
-            id: 'step6',
-            text: '这里是文章练习',
-            attachTo: { element: '#article', on: 'top' },
-            buttons: [
-              {
-                text: `下一步（6/${TourConfig.total}）`,
-                action() {
-                  tour.next()
-                  router.push('/articles')
-                },
+        tour.addStep({
+          id: 'step6',
+          text: '这里是文章练习',
+          attachTo: { element: '#article', on: 'top' },
+          buttons: [
+            {
+              text: `下一步（6/${TourConfig.total}）`,
+              action() {
+                tour.next()
+                router.push('/articles')
               },
-            ],
-          })
+            },
+          ],
+        })
 
-          const r = localStorage.getItem('tour-guide')
-          if (settingStore.first && !r && !isMobile()) {
-            tour.start()
-          }
-        }, 500)
-      }
+        const r = localStorage.getItem('tour-guide')
+        if (settingStore.first && !r && !isMobile()) {
+          tour.start()
+        }
+      }, 500)
     }
+  }
 )
 
 useStartKeyboardEventListener()
 useDisableEventListener(() => loading)
 
 function initData(initVal: TaskWords, init: boolean = false) {
-  let d = localStorage.getItem(PracticeSaveWordKey.key)
+  let d = getPracticeWordCache()
   if (d && init) {
-    try {
-      let obj = JSON.parse(d)
-      let s = obj.val
-      taskWords = Object.assign(taskWords, s.taskWords)
-      //这里直接赋值的话，provide后的inject获取不到最新值
-      data = Object.assign(data, s.practiceData)
-      statStore.$patch(s.statStoreData)
-    } catch (e) {
-      localStorage.removeItem(PracticeSaveWordKey.key)
-      initData(initVal, true)
-    }
+    taskWords = Object.assign(taskWords, d.taskWords)
+    //这里直接赋值的话，provide后的inject获取不到最新值
+    data = Object.assign(data, d.practiceData)
+    statStore.$patch(d.statStoreData)
   } else {
     // taskWords = initVal
     //不能直接赋值，会导致 inject 的数据为默认值
     taskWords = Object.assign(taskWords, initVal)
-    //如果 shuffle 数组不为空，就说明是复习
-    if (taskWords.shuffle.length === 0) {
+
+    if (settingStore.wordPracticeMode === WordPracticeMode.Shuffle) {
+      settingStore.wordPracticeType = WordPracticeType.Dictation
+      data.words = taskWords.shuffle
+      statStore.stage = WordPracticeStage.Shuffle
+      statStore.total = taskWords.shuffle.length
+      statStore.newWordNumber = 0
+      statStore.reviewWordNumber = 0
+      statStore.writeWordNumber = statStore.total
+    } else if (settingStore.wordPracticeMode === WordPracticeMode.Review) {
+      if (taskWords.review.length) {
+        data.words = taskWords.review
+        statStore.stage = WordPracticeStage.IdentifyReview
+      } else if (taskWords.write.length) {
+        data.words = taskWords.write
+        statStore.stage = WordPracticeStage.IdentifyReviewAll
+      }
+      statStore.total = taskWords.review.length + taskWords.write.length
+      statStore.newWordNumber = 0
+      statStore.reviewWordNumber = taskWords.review.length
+      statStore.writeWordNumber = taskWords.write.length
+    } else {
       if (taskWords.new.length === 0) {
         if (taskWords.review.length) {
-          settingStore.wordPracticeType = WordPracticeType.Identify
-          statStore.step = 3
           data.words = taskWords.review
+          if (settingStore.wordPracticeMode === WordPracticeMode.System) {
+            statStore.stage = WordPracticeStage.IdentifyReview
+          } else if (settingStore.wordPracticeMode === WordPracticeMode.Free) {
+            statStore.stage = WordPracticeModeStageMap[settingStore.wordPracticeMode][0]
+          } else if (settingStore.wordPracticeMode === WordPracticeMode.IdentifyOnly) {
+            statStore.stage = WordPracticeStage.IdentifyReview
+          } else if (settingStore.wordPracticeMode === WordPracticeMode.DictationOnly) {
+            statStore.stage = WordPracticeStage.DictationReview
+          } else if (settingStore.wordPracticeMode === WordPracticeMode.ListenOnly) {
+            statStore.stage = WordPracticeStage.ListenReview
+          }
         } else {
           if (taskWords.write.length) {
-            settingStore.wordPracticeType = WordPracticeType.Identify
             data.words = taskWords.write
-            statStore.step = 6
+            if (settingStore.wordPracticeMode === WordPracticeMode.System) {
+              statStore.stage = WordPracticeStage.IdentifyReviewAll
+            } else if (settingStore.wordPracticeMode === WordPracticeMode.Free) {
+              statStore.stage = WordPracticeModeStageMap[settingStore.wordPracticeMode][0]
+            } else if (settingStore.wordPracticeMode === WordPracticeMode.IdentifyOnly) {
+              statStore.stage = WordPracticeStage.IdentifyReviewAll
+            } else if (settingStore.wordPracticeMode === WordPracticeMode.DictationOnly) {
+              statStore.stage = WordPracticeStage.DictationReviewAll
+            } else if (settingStore.wordPracticeMode === WordPracticeMode.ListenOnly) {
+              statStore.stage = WordPracticeStage.ListenReviewAll
+            }
           } else {
             Toast.warning('没有可学习的单词！')
             router.push('/word')
           }
         }
       } else {
-        settingStore.wordPracticeType = WordPracticeType.FollowWrite
         data.words = taskWords.new
-        statStore.step = 0
+        statStore.stage = WordPracticeModeStageMap[settingStore.wordPracticeMode][0]
       }
       statStore.total = taskWords.review.length + taskWords.new.length + taskWords.write.length
       statStore.newWordNumber = taskWords.new.length
       statStore.reviewWordNumber = taskWords.review.length
       statStore.writeWordNumber = taskWords.write.length
-    } else {
-      settingStore.wordPracticeType = WordPracticeType.Dictation
-      data.words = taskWords.shuffle
-      statStore.step = 10
-      statStore.total = taskWords.shuffle.length
-      statStore.newWordNumber = 0
-      statStore.reviewWordNumber = 0
-      statStore.writeWordNumber = statStore.total
     }
 
     data.index = 0
@@ -259,7 +268,6 @@ function initData(initVal: TaskWords, init: boolean = false) {
   timer = setInterval(() => {
     if (isFocus) {
       statStore.spend += 1000
-      savePracticeData()
     }
   }, 1000)
 }
@@ -275,30 +283,60 @@ const nextWord: Word = $computed(() => {
 })
 
 watch(
-    () => settingStore.wordPracticeType,
-    n => {
-      if (settingStore.wordPracticeMode === WordPracticeMode.Free) return
-      switch (n) {
-        case WordPracticeType.Spell:
-        case WordPracticeType.Dictation:
-          settingStore.dictation = true
-          settingStore.translate = true
-          break
-        case WordPracticeType.Listen:
-          settingStore.dictation = true
-          settingStore.translate = false
-          break
-        case WordPracticeType.FollowWrite:
-          settingStore.dictation = false
-          settingStore.translate = true
-          break
-        case WordPracticeType.Identify:
-          settingStore.dictation = false
-          settingStore.translate = false
-          break
-      }
-    },
-    { immediate: true }
+  () => settingStore.wordPracticeType,
+  n => {
+    if (settingStore.wordPracticeMode === WordPracticeMode.Free) return
+    switch (n) {
+      case WordPracticeType.Spell:
+      case WordPracticeType.Dictation:
+        settingStore.dictation = true
+        settingStore.translate = true
+        break
+      case WordPracticeType.Listen:
+        settingStore.dictation = true
+        settingStore.translate = false
+        break
+      case WordPracticeType.FollowWrite:
+        settingStore.dictation = false
+        settingStore.translate = true
+        break
+      case WordPracticeType.Identify:
+        settingStore.dictation = false
+        settingStore.translate = false
+        break
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => statStore.stage,
+  n => {
+    switch (n) {
+      case WordPracticeStage.DictationNewWord:
+      case WordPracticeStage.DictationReview:
+      case WordPracticeStage.DictationReviewAll:
+      case WordPracticeStage.Shuffle:
+        settingStore.wordPracticeType = WordPracticeType.Dictation
+        break
+      case WordPracticeStage.ListenNewWord:
+      case WordPracticeStage.ListenReview:
+      case WordPracticeStage.ListenReviewAll:
+        settingStore.wordPracticeType = WordPracticeType.Listen
+        break
+      case WordPracticeStage.FollowWriteNewWord:
+      case WordPracticeStage.FollowWriteReview:
+      case WordPracticeStage.FollowWriteReviewAll:
+        settingStore.wordPracticeType = WordPracticeType.FollowWrite
+        break
+      case WordPracticeStage.IdentifyNewWord:
+      case WordPracticeStage.IdentifyReview:
+      case WordPracticeStage.IdentifyReviewAll:
+        settingStore.wordPracticeType = WordPracticeType.Identify
+        break
+    }
+  },
+  { immediate: true }
 )
 
 const groupSize = 7
@@ -324,29 +362,30 @@ function wordLoop() {
 
 let toastInstance: ToastInstance = null
 
-function goNextStep(originList, mode, msg) {
+function nextStage(originList: Word[], log: string = '', toast: boolean = false) {
   //每次都判断，因为每次都可能新增已掌握的单词
   let list = originList.filter(v => !data.excludeWords.includes(v.word))
-  console.log(msg)
+  console.log(log)
+  statStore.stage = statStore.nextStage
   if (list.length) {
-    if (toastInstance) toastInstance.close()
-    toastInstance = Toast.info('输入完成后按空格键切换下一个', { duration: 5000 })
+    if (toast) {
+      if (toastInstance) toastInstance.close()
+      toastInstance = Toast.info('输入完成后按空格键切换下一个', { duration: 5000 })
+    }
     data.words = list
-    settingStore.wordPracticeType = mode
     data.index = 0
-    statStore.step++
   } else {
-    console.log(msg + ':无单词略过')
-    statStore.step += 3
-    next()
+    console.log(log + ':无单词略过')
+    next(false)
   }
 }
 
 async function next(isTyping: boolean = true) {
+  debugger
   if (isTyping) statStore.inputWordNumber++
   if (settingStore.wordPracticeMode === WordPracticeMode.Free) {
     if (data.index === data.words.length - 1) {
-      data.wrongWords = data.wrongWords.filter(v => (!data.excludeWords.includes(v.word)))
+      data.wrongWords = data.wrongWords.filter(v => !data.excludeWords.includes(v.word))
       if (data.wrongWords.length) {
         isTypingWrongWord.value = true
         settingStore.wordPracticeType = WordPracticeType.FollowWrite
@@ -358,23 +397,26 @@ async function next(isTyping: boolean = true) {
         console.log('自由模式，全完学完了')
         showStatDialog = true
         clearInterval(timer)
-        setTimeout(() => localStorage.removeItem(PracticeSaveWordKey.key), 300)
+        setTimeout(() => setPracticeWordCache(null), 300)
       }
     } else {
       data.index++
     }
   } else {
     if (data.index === data.words.length - 1) {
-      if (statStore.step === 0 || isTypingWrongWord.value) {
+      //如果手动敲的，才轮询
+      if ((statStore.stage === WordPracticeStage.FollowWriteNewWord || isTypingWrongWord.value) && isTyping) {
         if (settingStore.wordPracticeType !== WordPracticeType.Spell) {
           //回到最后一组的开始位置
           data.index = Math.floor(data.index / groupSize) * groupSize
           emitter.emit(EventKey.resetWord)
           settingStore.wordPracticeType = WordPracticeType.Spell
+          //如果单词是已掌握的，则跳过
+          if (isWordSimple(word)) next(false)
           return
         }
       }
-      data.wrongWords = data.wrongWords.filter(v => (!data.excludeWords.includes(v.word)))
+      data.wrongWords = data.wrongWords.filter(v => !data.excludeWords.includes(v.word))
       if (data.wrongWords.length) {
         isTypingWrongWord.value = true
         settingStore.wordPracticeType = WordPracticeType.FollowWrite
@@ -384,58 +426,71 @@ async function next(isTyping: boolean = true) {
         data.wrongWords = []
       } else {
         isTypingWrongWord.value = false
-        console.log('当前学完了，没错词', statStore.total, statStore.step, data.index)
-        //学完了，这里第 7 步如果无单词，加 3 就是 9 了
-        if (statStore.step >= 8) {
+        console.log('当前学完了，没错词', statStore.total, statStore.stage, data.index)
+
+        const complete = () => {
           console.log('全完学完了')
           showStatDialog = true
           clearInterval(timer)
-          setTimeout(() => localStorage.removeItem(PracticeSaveWordKey.key), 300)
-          return;
+          setTimeout(() => setPracticeWordCache(null), 300)
         }
 
-        //开始默写之前
-        if (statStore.step === 7) {
-          return goNextStep(shuffle(taskWords.write), WordPracticeType.Dictation, '开始默写之前')
-        }
-
-        //开始听写之前
-        if (statStore.step === 6) {
-          return goNextStep(shuffle(taskWords.write), WordPracticeType.Listen, '开始听写之前')
-        }
-
-        //开始自测之前
-        if (statStore.step === 5) {
-          return goNextStep(taskWords.write, WordPracticeType.Identify, '开始自测之前')
-        }
-
-        //开始默写上次
-        if (statStore.step === 4) {
-          return goNextStep(shuffle(taskWords.review), WordPracticeType.Dictation, '开始默写上次')
-        }
-
-        //开始听写上次
-        if (statStore.step === 3) {
-          return goNextStep(shuffle(taskWords.review), WordPracticeType.Listen, '开始听写上次')
-        }
-
-        //开始自测昨日
-        if (statStore.step === 2) {
-          return goNextStep(taskWords.review, WordPracticeType.Identify, '开始自测昨日')
-        }
-
-        //开始默写新词
-        if (statStore.step === 1) {
-          return goNextStep(shuffle(taskWords.new), WordPracticeType.Dictation, '开始默写新词')
-        }
-
-        //开始听写新词
-        if (statStore.step === 0) {
-          return goNextStep(shuffle(taskWords.new), WordPracticeType.Listen, '开始听写新词')
+        if (settingStore.wordPracticeMode === WordPracticeMode.System) {
+          if (statStore.stage === WordPracticeStage.FollowWriteNewWord) {
+            nextStage(shuffle(taskWords.new), '开始听写新词', true)
+          } else if (statStore.stage === WordPracticeStage.ListenNewWord) {
+            nextStage(shuffle(taskWords.new), '开始默写新词')
+          } else if (statStore.stage === WordPracticeStage.DictationNewWord) {
+            nextStage(taskWords.review, '开始自测昨日')
+          } else if (statStore.stage === WordPracticeStage.IdentifyReview) {
+            nextStage(shuffle(taskWords.review), '开始听写上次', true)
+          } else if (statStore.stage === WordPracticeStage.ListenReview) {
+            nextStage(shuffle(taskWords.review), '开始默写上次')
+          } else if (statStore.stage === WordPracticeStage.DictationReview) {
+            nextStage(taskWords.write, '开始自测之前')
+          } else if (statStore.stage === WordPracticeStage.IdentifyReviewAll) {
+            nextStage(shuffle(taskWords.write), '开始听写之前', true)
+          } else if (statStore.stage === WordPracticeStage.ListenReviewAll) {
+            nextStage(shuffle(taskWords.write), '开始默写之前')
+          } else if (statStore.stage === WordPracticeStage.DictationReviewAll) {
+            complete()
+          }
+        } else if (settingStore.wordPracticeMode === WordPracticeMode.ListenOnly) {
+          if (statStore.stage === WordPracticeStage.ListenNewWord) {
+            nextStage(taskWords.review, '开始听写昨日', true)
+          } else if (statStore.stage === WordPracticeStage.ListenReview) {
+            nextStage(taskWords.write, '开始听写之前')
+          } else if (statStore.stage === WordPracticeStage.ListenReviewAll) complete()
+        } else if (settingStore.wordPracticeMode === WordPracticeMode.DictationOnly) {
+          if (statStore.stage === WordPracticeStage.DictationNewWord) {
+            nextStage(taskWords.review, '开始默写昨日', true)
+          } else if (statStore.stage === WordPracticeStage.DictationReview) {
+            nextStage(taskWords.write, '开始默写之前')
+          } else if (statStore.stage === WordPracticeStage.DictationReviewAll) complete()
+        } else if (settingStore.wordPracticeMode === WordPracticeMode.IdentifyOnly) {
+          if (statStore.stage === WordPracticeStage.IdentifyNewWord) {
+            nextStage(taskWords.review, '开始自测昨日')
+          } else if (statStore.stage === WordPracticeStage.IdentifyReview) {
+            nextStage(taskWords.write, '开始自测之前')
+          } else if (statStore.stage === WordPracticeStage.IdentifyReviewAll) complete()
+        } else if (settingStore.wordPracticeMode === WordPracticeMode.Shuffle) {
+          if (statStore.stage === WordPracticeStage.Shuffle) complete()
+        } else if (settingStore.wordPracticeMode === WordPracticeMode.Review) {
+          if (statStore.stage === WordPracticeStage.IdentifyReview) {
+            nextStage(shuffle(taskWords.review), '开始听写昨日', true)
+          } else if (statStore.stage === WordPracticeStage.ListenReview) {
+            nextStage(shuffle(taskWords.review), '开始默写昨日')
+          } else if (statStore.stage === WordPracticeStage.DictationReview) {
+            nextStage(taskWords.write, '开始自测之前')
+          } else if (statStore.stage === WordPracticeStage.IdentifyReviewAll) {
+            nextStage(shuffle(taskWords.write), '开始听写之前', true)
+          } else if (statStore.stage === WordPracticeStage.ListenReviewAll) {
+            nextStage(shuffle(taskWords.write), '开始默写之前')
+          } else if (statStore.stage === WordPracticeStage.DictationReviewAll) complete()
         }
       }
     } else {
-      if (statStore.step === 0) {
+      if (statStore.stage === WordPracticeStage.FollowWriteNewWord) {
         wordLoop()
       } else {
         if (isTypingWrongWord.value) wordLoop()
@@ -443,12 +498,12 @@ async function next(isTyping: boolean = true) {
       }
     }
   }
-  savePracticeData()
+  //如果单词是已掌握的，则跳过
+  if (isWordSimple(word)) next(false)
 }
 
 function skipStep() {
   data.index = data.words.length - 1
-  settingStore.wordPracticeType = WordPracticeType.Spell
   data.wrongWords = []
   next(false)
 }
@@ -478,18 +533,11 @@ function onTypeWrong() {
 }
 
 function savePracticeData() {
-  // console.log('savePracticeData')
-  localStorage.setItem(
-      PracticeSaveWordKey.key,
-      JSON.stringify({
-        version: PracticeSaveWordKey.version,
-        val: {
-          taskWords,
-          practiceData: data,
-          statStoreData: statStore.$state,
-        },
-      })
-  )
+  setPracticeWordCache({
+    taskWords,
+    practiceData: data,
+    statStoreData: statStore.$state,
+  })
 }
 
 watch(() => data.index, savePracticeData)
@@ -512,21 +560,15 @@ useOnKeyboardEventListener(onKeyDown, onKeyUp)
 
 function repeat() {
   console.log('重学一遍')
+  setPracticeWordCache(null)
   let temp = cloneDeep(taskWords)
   let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
   //随机练习单独处理
-  if (taskWords.shuffle.length) {
+  if (settingStore.wordPracticeMode === WordPracticeMode.Shuffle) {
     temp.shuffle = shuffle(temp.shuffle.filter(v => !ignoreList.includes(v.word)))
   } else {
-    if (settingStore.wordPracticeMode === WordPracticeMode.System) settingStore.dictation = false
-    if (store.sdict.lastLearnIndex === 0 && store.sdict.complete) {
-      //如果是刚刚完成，那么学习进度要从length减回去，因为lastLearnIndex为0了，同时改complete为false
-      store.sdict.lastLearnIndex = store.sdict.length - statStore.newWordNumber
-      store.sdict.complete = false
-    } else {
-      //将学习进度减回去
-      store.sdict.lastLearnIndex = store.sdict.lastLearnIndex - statStore.newWordNumber
-    }
+    //将学习进度减回去
+    store.sdict.lastLearnIndex = store.sdict.lastLearnIndex - statStore.newWordNumber
     //排除已掌握单词
     temp.new = temp.new.filter(v => !ignoreList.includes(v.word))
     temp.review = temp.review.filter(v => !ignoreList.includes(v.word))
@@ -594,29 +636,53 @@ function togglePanel() {
 }
 
 async function continueStudy() {
+  setPracticeWordCache(null)
   let temp = cloneDeep(taskWords)
+  let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
+
   //随机练习单独处理
-  if (taskWords.shuffle.length) {
-    let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
+  if (settingStore.wordPracticeMode === WordPracticeMode.Shuffle) {
     temp.shuffle = shuffle(store.sdict.words.filter(v => !ignoreList.includes(v.word))).slice(
-        0,
-        runtimeStore.routeData.total
+      0,
+      runtimeStore.routeData.total ?? temp.shuffle.length
     )
     if (showStatDialog) showStatDialog = false
   } else {
-    if (settingStore.wordPracticeMode === WordPracticeMode.System) settingStore.dictation = false
     //这里判断是否显示结算弹框，如果显示了结算弹框的话，就不用加进度了
     if (!showStatDialog) {
       console.log('没学完，强行跳过')
       store.sdict.lastLearnIndex = store.sdict.lastLearnIndex + statStore.newWordNumber
+      // 忽略单词数
+      const ignoreCount = ignoreList.filter(word => store.sdict.words.some(w => w.word.toLowerCase() === word)).length
+      // 如果lastLearnIndex已经超过可学单词数，则判定完成
+      if (store.sdict.lastLearnIndex + ignoreCount >= store.sdict.length) {
+        store.sdict.complete = true
+        store.sdict.lastLearnIndex = store.sdict.length
+      }
     } else {
       console.log('学完了，正常下一组')
       showStatDialog = false
     }
+
     temp = getCurrentStudyWord()
   }
   emitter.emit(EventKey.resetWord)
   initData(temp)
+
+  if (AppEnv.CAN_REQUEST) {
+    let res = await setUserDictProp(null, { ...store.sdict, type: 'word' })
+    if (!res.success) {
+      Toast.error(res.msg)
+    }
+  }
+}
+
+async function jumpToGroup(group: number) {
+  setPracticeWordCache(null)
+  console.log('没学完，强行跳过', group)
+  store.sdict.lastLearnIndex = (group - 1) * store.sdict.perDayStudyNumber
+  emitter.emit(EventKey.resetWord)
+  initData(getCurrentStudyWord())
 
   if (AppEnv.CAN_REQUEST) {
     let res = await setUserDictProp(null, { ...store.sdict, type: 'word' })
@@ -633,24 +699,9 @@ function randomWrite() {
   settingStore.dictation = true
 }
 
-function nextRandomWrite() {
-  console.log('继续随机默写')
-  initData(getCurrentStudyWord())
-  randomWrite()
-  showStatDialog = false
-}
-
 useEvents([
   [EventKey.repeatStudy, repeat],
   [EventKey.continueStudy, continueStudy],
-  [EventKey.randomWrite, nextRandomWrite],
-  [
-    EventKey.changeDict,
-    () => {
-      initData(getCurrentStudyWord())
-    },
-  ],
-
   [ShortcutKey.ShowWord, show],
   [ShortcutKey.Previous, prev],
   [ShortcutKey.Next, skip],
@@ -666,26 +717,25 @@ useEvents([
   [ShortcutKey.ToggleConciseMode, toggleConciseMode],
   [ShortcutKey.TogglePanel, togglePanel],
   [ShortcutKey.RandomWrite, randomWrite],
-  [ShortcutKey.NextRandomWrite, nextRandomWrite],
 ])
 </script>
 
 <template>
   <PracticeLayout v-loading="loading" panelLeft="var(--word-panel-margin-left)">
     <template v-slot:practice>
-      <div class="practice-word">
-        <div class="absolute z-1 top-4 w-full" v-if="settingStore.showNearWord">
+      <div class="practice-word mb-50">
+        <div
+          class="fixed z-1 top-4 w-full"
+          style="left: calc(50vw + var(--aside-width) / 2 - var(--toolbar-width) / 2); width: var(--toolbar-width)"
+          v-if="settingStore.showNearWord"
+        >
           <div class="center gap-2 cursor-pointer float-left" @click="prev" v-if="prevWord">
             <IconFluentArrowLeft16Regular class="arrow" width="22" />
             <Tooltip :title="`上一个(${settingStore.shortcutKeyMap[ShortcutKey.Previous]})`">
               <div class="word">{{ prevWord.word }}</div>
             </Tooltip>
           </div>
-          <div
-              class="center gap-2 cursor-pointer float-right mr-3"
-              @click="next(false)"
-              v-if="nextWord"
-          >
+          <div class="center gap-2 cursor-pointer float-right mr-3" @click="next(false)" v-if="nextWord">
             <Tooltip :title="`下一个(${settingStore.shortcutKeyMap[ShortcutKey.Next]})`">
               <div class="word" :class="settingStore.dictation && 'word-shadow'">
                 {{ nextWord.word }}
@@ -694,48 +744,45 @@ useEvents([
             <IconFluentArrowRight16Regular class="arrow" width="22" />
           </div>
         </div>
-        <TypeWord
-            ref="typingRef"
-            :word="word"
-            @wrong="onTypeWrong"
-            @complete="next"
-            @know="onWordKnow"
-        />
+        <TypeWord ref="typingRef" :word="word" @wrong="onTypeWrong" @complete="next" @know="onWordKnow" />
       </div>
     </template>
     <template v-slot:panel>
       <Panel>
         <template v-slot:title>
-          <!--          <span>{{ store.sdict.name }} ({{ data.index + 1 }} / {{ data.words.length }})</span>-->
-          <div class="center gap-space">
-            <span
-            >{{ store.sdict.name }} ({{ store.sdict.lastLearnIndex }} /
-              {{ store.sdict.length }})</span
-            >
+          <div class="center gap-1">
+            <span>{{ store.sdict.name }}</span>
+
+            <GroupList
+              @click="jumpToGroup"
+              v-if="taskWords.new.length && settingStore.wordPracticeMode !== WordPracticeMode.Shuffle"
+            />
             <BaseIcon
-                @click="continueStudy"
-                :title="`下一组(${settingStore.shortcutKeyMap[ShortcutKey.NextChapter]})`"
+              v-if="
+                taskWords.new.length &&
+                ![WordPracticeMode.Review, WordPracticeMode.Shuffle].includes(settingStore.wordPracticeMode)
+              "
+              @click="continueStudy"
+              :title="`下一组(${settingStore.shortcutKeyMap[ShortcutKey.NextChapter]})`"
             >
               <IconFluentArrowRight16Regular class="arrow" width="22" />
             </BaseIcon>
-            <BaseIcon
-                @click="randomWrite"
-                :title="`随机默写(${settingStore.shortcutKeyMap[ShortcutKey.RandomWrite]})`"
-            >
+
+            <BaseIcon @click="randomWrite" :title="`随机默写(${settingStore.shortcutKeyMap[ShortcutKey.RandomWrite]})`">
               <IconFluentArrowShuffle16Regular class="arrow" width="22" />
             </BaseIcon>
           </div>
         </template>
         <div class="panel-page-item pl-4">
           <WordList
-              v-if="data.words.length"
-              :is-active="settingStore.showPanel"
-              :static="false"
-              :show-word="!settingStore.dictation"
-              :show-translate="settingStore.translate"
-              :list="data.words"
-              :activeIndex="data.index"
-              @click="(val: any) => (data.index = val.index)"
+            v-if="data.words.length"
+            :is-active="settingStore.showPanel"
+            :static="false"
+            :show-word="!settingStore.dictation"
+            :show-translate="settingStore.translate"
+            :list="data.words"
+            :activeIndex="data.index"
+            @click="(val: any) => (data.index = val.index)"
           >
           </WordList>
           <Empty v-else />
@@ -744,12 +791,12 @@ useEvents([
     </template>
     <template v-slot:footer>
       <Footer
-          :is-simple="isWordSimple(word)"
-          @toggle-simple="toggleWordSimpleWrapper"
-          :is-collect="isWordCollect(word)"
-          @toggle-collect="toggleWordCollect(word)"
-          @skip="next(false)"
-          @skipStep="skipStep"
+        :is-simple="isWordSimple(word)"
+        @toggle-simple="toggleWordSimpleWrapper"
+        :is-collect="isWordCollect(word)"
+        @toggle-collect="toggleWordCollect(word)"
+        @skip="next(false)"
+        @skipStep="skipStep"
       />
     </template>
   </PracticeLayout>

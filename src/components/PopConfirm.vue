@@ -18,9 +18,9 @@ export default {
       validator(value) {
         // Validate that array items have the correct structure
         if (Array.isArray(value)) {
-          return value.every(item => 
-            typeof item === 'object' && 
-            item !== null && 
+          return value.every(item =>
+            typeof item === 'object' &&
+            item !== null &&
             typeof item.text === 'string' &&
             ['normal', 'bold', 'red', 'redBold'].includes(item.type)
           )
@@ -114,8 +114,8 @@ export default {
                       <div ref="tip" class="pop-confirm-content shadow-2xl">
                         <div class="w-52 title-content">
                           {this.titleItems.map((item, index) => (
-                            <div 
-                              key={index} 
+                            <div
+                              key={index}
                               style={this.getTextStyle(item.type)}
                               class="title-item"
                             >
@@ -140,17 +140,14 @@ export default {
 </script>
 <style lang="scss" scoped>
 .pop-confirm-content {
-  position: fixed;
   background: var(--color-tooltip-bg);
-  padding: 1rem;
-  border-radius: .6rem;
   transform: translate(-50%, calc(-100% - .6rem));
-  z-index: 999;
+  @apply fixed z-9999 shadow-2xl rounded-lg p-3;
 
   .title-content {
     .title-item {
       margin-bottom: 0.25rem;
-      
+
       &:last-child {
         margin-bottom: 0;
       }

@@ -9,7 +9,6 @@ import BaseButton from "@/components/BaseButton.vue";
 import {PASSWORD_CONFIG, PHONE_CONFIG} from "@/config/auth.ts";
 import {changeEmailApi, changePhoneApi, setPassword, updateUserInfoApi, User} from "@/apis/user.ts";
 import BaseIcon from "@/components/BaseIcon.vue";
-import {CodeType} from "@/types/types.ts";
 import FormItem from "@/components/base/form/FormItem.vue";
 import Form from "@/components/base/form/Form.vue";
 import {FormInstance} from "@/components/base/form/types.ts";
@@ -18,6 +17,7 @@ import {_dateFormat, cloneDeep, jump2Feedback} from "@/utils";
 import Toast from "@/components/base/toast/Toast.ts";
 import Code from "@/pages/user/Code.vue";
 import {MessageBox} from "@/utils/MessageBox.tsx";
+import {CodeType} from "@/types/enum.ts";
 
 const userStore = useUserStore()
 const router = useRouter()

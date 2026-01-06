@@ -1,4 +1,4 @@
-import { Article, DictId, PracticeArticleWordType, Sentence } from "@/types/types.ts"
+import type { Article, Sentence } from "@/types/types.ts"
 import { _nextTick, cloneDeep } from "@/utils"
 import { usePlayWordAudio } from "@/hooks/sound.ts"
 import { getSentenceAllText, getSentenceAllTranslateText } from "@/hooks/translate.ts"
@@ -6,6 +6,9 @@ import { getDefaultArticleWord, getDefaultDict } from "@/types/func.ts"
 import { useSettingStore } from "@/stores/setting.ts"
 import { useBaseStore } from "@/stores/base.ts"
 import { useRuntimeStore } from "@/stores/runtime.ts"
+import { nanoid } from 'nanoid'
+import {PracticeArticleWordType} from "@/types/enum.ts";
+import { DictId } from '@/config/env.ts'
 
 function parseSentence(sentence: string) {
   // 先统一一些常见的“智能引号” -> 直引号，避免匹配问题
@@ -368,7 +371,7 @@ export function syncBookInMyStudyList(study = false) {
     if (!temp.custom && temp.id !== DictId.articleCollect) {
       temp.custom = true
       if (!temp.id.includes('_custom')) {
-        temp.id += '_custom'
+        temp.id += '_custom_' + nanoid(6)
       }
     }
     temp.length = temp.articles.length

@@ -1,5 +1,6 @@
 import http from '@/utils/http.ts'
-import { CodeType } from "@/types/types.ts";
+
+import {CodeType} from "@/types/enum.ts";
 
 // 用户登录接口
 export interface LoginParams {

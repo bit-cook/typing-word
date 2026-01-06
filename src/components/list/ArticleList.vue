@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Article } from '@/types/types.ts'
+import type { Article } from '@/types/types.ts'
 import BaseList from '@/components/list/BaseList.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import { useArticleOptions } from '@/hooks/dict.ts'
@@ -8,16 +8,17 @@ import BaseIcon from '@/components/BaseIcon.vue'
 interface IProps {
   list: Article[]
   showTranslate?: boolean
+  showDesc?: boolean
 }
 
 const props = withDefaults(defineProps<IProps>(), {
   list: () => [] as Article[],
   showTranslate: true,
+  showDesc: false,
 })
 
 const emit = defineEmits<{
   click: [val: { item: Article; index: number }]
-  title: [val: { item: Article; index: number }]
 }>()
 
 let searchKey = $ref('')
@@ -88,7 +89,7 @@ defineExpose({ scrollToBottom, scrollToItem })
               <div class="item-title">
                 <div class="name">
                   <span class="text-sm text-gray-500" v-if="index != undefined && !searchKey">
-                    {{ index }}.
+                    {{ item.id == -1 ? '' : (index - (props.showDesc ? 1 : 0)) + '.' }}
                   </span>
                   {{ item.title }}
                 </div>
@@ -107,9 +108,9 @@ defineExpose({ scrollToBottom, scrollToItem })
               <IconFluentStar16Regular v-if="!isArticleCollect(item)" />
               <IconFluentStar16Filled v-else />
             </BaseIcon>
-            <BaseIcon title="可播放音频" v-if="item.audioSrc || item.audioFileId" noBg>
-              <IconBxVolumeFull class="opacity-100! color-gray" />
-            </BaseIcon>
+<!--            <BaseIcon title="可播放音频" v-if="item.audioSrc || item.audioFileId" noBg>-->
+<!--              <IconBxVolumeFull class="opacity-100! color-gray" />-->
+<!--            </BaseIcon>-->
           </div>
         </div>
       </template>

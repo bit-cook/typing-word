@@ -29,7 +29,7 @@ async function check() {
   console.parse(str)
   // console.log(str)
   let data = checkAndUpgradeSaveDict(str)
-  console.log('data', data)
+  // console.log('data', data)
   // this.setState(data)
 }
 

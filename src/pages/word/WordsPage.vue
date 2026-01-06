@@ -13,7 +13,7 @@ import {
   useNav,
 } from '@/utils'
 import BasePage from '@/components/BasePage.vue'
-import { DictResource, WordPracticeMode } from '@/types/types.ts'
+import type { DictResource } from '@/types/types.ts'
 import { watch } from 'vue'
 import { getCurrentStudyWord } from '@/hooks/dict.ts'
 import { useRuntimeStore } from '@/stores/runtime.ts'
@@ -28,18 +28,14 @@ import PracticeSettingDialog from '@/pages/word/components/PracticeSettingDialog
 import ChangeLastPracticeIndexDialog from '@/pages/word/components/ChangeLastPracticeIndexDialog.vue'
 import { useSettingStore } from '@/stores/setting.ts'
 import { useFetch } from '@vueuse/core'
-import {
-  AppEnv,
-  DICT_LIST,
-  Host,
-  LIB_JS_URL,
-  PracticeSaveWordKey,
-  TourConfig,
-} from '@/config/env.ts'
+import { AppEnv, DICT_LIST, Host, LIB_JS_URL, Origin, TourConfig, WordPracticeModeNameMap } from '@/config/env.ts'
 import { myDictList } from '@/apis'
 import PracticeWordListDialog from '@/pages/word/components/PracticeWordListDialog.vue'
 import ShufflePracticeSettingDialog from '@/pages/word/components/ShufflePracticeSettingDialog.vue'
 import { deleteDict } from '@/apis/dict.ts'
+import OptionButton from '@/components/base/OptionButton.vue'
+import { getPracticeWordCache, setPracticeWordCache } from '@/utils/cache.ts'
+import { WordPracticeMode } from '@/types/enum.ts'
 
 const store = useBaseStore()
 const settingStore = useSettingStore()
@@ -105,16 +101,10 @@ async function init() {
     }
   }
   if (!currentStudy.new.length && store.sdict.words.length) {
-    let d = localStorage.getItem(PracticeSaveWordKey.key)
+    let d = getPracticeWordCache()
     if (d) {
-      try {
-        let obj = JSON.parse(d)
-        currentStudy = obj.val.taskWords
-        isSaveData = true
-      } catch (e) {
-        localStorage.removeItem(PracticeSaveWordKey.key)
-        currentStudy = getCurrentStudyWord()
-      }
+      currentStudy = d.taskWords
+      isSaveData = true
     } else {
       currentStudy = getCurrentStudyWord()
     }
@@ -122,11 +112,18 @@ async function init() {
   loading = false
 }
 
-function startPractice() {
+function startPractice(practiceMode: WordPracticeMode, resetCache: boolean = false): void {
   if (store.sdict.id) {
     if (!store.sdict.words.length) {
-      return Toast.warning('没有单词可学习！')
+      Toast.warning('没有单词可学习！')
+      return
     }
+
+    if (resetCache) {
+      setPracticeWordCache(null)
+    }
+    settingStore.wordPracticeMode = practiceMode
+
     window.umami?.track('startStudyWord', {
       name: store.sdict.name,
       index: store.sdict.lastLearnIndex,
@@ -142,6 +139,16 @@ function startPractice() {
     window.umami?.track('no-dict')
     Toast.warning('请先选择一本词典')
   }
+}
+
+function freePractice() {
+  startPractice(WordPracticeMode.Free, settingStore.wordPracticeMode !== WordPracticeMode.Free && isSaveData)
+}
+function systemPractice() {
+  startPractice(
+    settingStore.wordPracticeMode === WordPracticeMode.Free ? WordPracticeMode.System : settingStore.wordPracticeMode,
+    settingStore.wordPracticeMode === WordPracticeMode.Free && isSaveData
+  )
 }
 
 let showPracticeSettingDialog = $ref(false)
@@ -195,11 +202,7 @@ function toggleSelect(item) {
 
 const progressTextLeft = $computed(() => {
   if (store.sdict.complete) return '已学完，进入总复习阶段'
-  return '已学习' + store.currentStudyProgress + '%'
-})
-const progressTextRight = $computed(() => {
-  // if (store.sdict.complete) return store.sdict?.length
-  return store.sdict?.lastLearnIndex
+  return '当前进度：已学' + store.currentStudyProgress + '%'
 })
 
 function check(cb: Function) {
@@ -214,7 +217,7 @@ function check(cb: Function) {
 async function savePracticeSetting() {
   Toast.success('修改成功')
   isSaveData = false
-  localStorage.removeItem(PracticeSaveWordKey.key)
+  setPracticeWordCache(null)
   await store.changeDict(runtimeStore.editDict)
   currentStudy = getCurrentStudyWord()
 }
@@ -229,8 +232,8 @@ async function onShufflePracticeSettingOk(total) {
     complete: store.sdict.complete,
   })
   isSaveData = false
-  localStorage.removeItem(PracticeSaveWordKey.key)
-
+  setPracticeWordCache(null)
+  settingStore.wordPracticeMode = WordPracticeMode.Shuffle
   let ignoreList = [store.allIgnoreWords, store.knownWords][settingStore.ignoreSimpleWord ? 0 : 1]
   currentStudy.shuffle = shuffle(
     store.sdict.words.slice(0, store.sdict.lastLearnIndex).filter(v => !ignoreList.includes(v.word))
@@ -248,26 +251,35 @@ async function onShufflePracticeSettingOk(total) {
 async function saveLastPracticeIndex(e) {
   Toast.success('修改成功')
   runtimeStore.editDict.lastLearnIndex = e
+  // runtimeStore.editDict.complete = e >= runtimeStore.editDict.length - 1
   showChangeLastPracticeIndexDialog = false
   isSaveData = false
-  localStorage.removeItem(PracticeSaveWordKey.key)
+  setPracticeWordCache(null)
   await store.changeDict(runtimeStore.editDict)
   currentStudy = getCurrentStudyWord()
 }
 
-const { data: recommendDictList, isFetching } = useFetch(
-  resourceWrap(DICT_LIST.WORD.RECOMMENDED)
-).json()
+const { data: recommendDictList, isFetching } = useFetch(resourceWrap(DICT_LIST.WORD.RECOMMENDED)).json()
 
 let isNewHost = $ref(window.location.host === Host)
+
+const systemPracticeText = $computed(() => {
+  if (settingStore.wordPracticeMode === WordPracticeMode.Free) {
+    return '开始学习'
+  } else {
+    return isSaveData
+      ? '继续' + WordPracticeModeNameMap[settingStore.wordPracticeMode]
+      : '开始' + WordPracticeModeNameMap[settingStore.wordPracticeMode]
+  }
+})
 </script>
 
 <template>
   <BasePage>
     <div class="mb-4" v-if="!isNewHost">
       新域名已启用，后续请访问
-      <a href="https://typewords.cc/words?from_old_site=1">https://typewords.cc</a>。当前 2study.top
-      域名将在不久后停止使用
+      <a class="mr-4" :href="`${Origin}/words?from_old_site=1`">{{ Origin }}</a
+      >当前 2study.top 域名将在不久后停止使用
     </div>
 
     <div class="card flex flex-col md:flex-row gap-4">
@@ -282,20 +294,22 @@ let isNewHost = $ref(window.location.host === Host)
         </div>
 
         <template v-if="store.sdict.id">
-          <div class="mt-4 flex flex-col gap-2">
-            <div class="">当前进度：{{ progressTextLeft }}</div>
-            <Progress
-              size="large"
-              :percentage="store.currentStudyProgress"
-              :show-text="false"
-            ></Progress>
+          <div class="mt-4 space-y-2">
             <div class="text-sm flex justify-between">
-              <span>已完成 {{ progressTextRight }} 词 / 共 {{ store.sdict.words.length }} 词</span>
-              <span v-if="store.sdict.id">
+              <span v-opacity="store.sdict.id && store.sdict.lastLearnIndex < store.sdict.length">
                 预计完成日期：{{
-                  _getAccomplishDate(store.sdict.words.length, store.sdict.perDayStudyNumber)
+                  _getAccomplishDate(
+                    store.sdict.words.length - store.sdict.lastLearnIndex,
+                    store.sdict.perDayStudyNumber
+                  )
                 }}
               </span>
+            </div>
+            <Progress size="large" :percentage="store.currentStudyProgress" :show-text="false"></Progress>
+
+            <div class="text-sm flex justify-between">
+              <span>{{ progressTextLeft }}</span>
+              <span> {{ store.sdict?.lastLearnIndex }} / {{ store.sdict.words.length }} 词</span>
             </div>
           </div>
           <div class="flex items-center mt-4 gap-4">
@@ -331,10 +345,7 @@ let isNewHost = $ref(window.location.host === Host)
         </div>
       </div>
 
-      <div
-        class="flex-1 w-full mt-4 md:mt-0"
-        :class="!store.sdict.id && 'opacity-30 cursor-not-allowed'"
-      >
+      <div class="flex-1 w-full mt-4 md:mt-0" :class="!store.sdict.id && 'opacity-30 cursor-not-allowed'">
         <div class="flex justify-between">
           <div class="flex items-center gap-2">
             <div class="p-2 center rounded-full bg-white">
@@ -343,10 +354,7 @@ let isNewHost = $ref(window.location.host === Host)
             <div class="text-xl font-bold">
               {{ isSaveData ? '上次任务' : '今日任务' }}
             </div>
-            <span
-              class="color-link cursor-pointer"
-              v-if="store.sdict.id"
-              @click="showPracticeWordListDialog = true"
+            <span class="color-link cursor-pointer" v-if="store.sdict.id" @click="showPracticeWordListDialog = true"
               >词表</span
             >
           </div>
@@ -370,90 +378,98 @@ let isNewHost = $ref(window.location.host === Host)
             <div class="num">{{ currentStudy.new.length }}</div>
             <div class="txt">新词数</div>
           </div>
-          <template v-if="settingStore.wordPracticeMode === WordPracticeMode.System">
-            <div class="stat">
-              <div class="num">{{ currentStudy.review.length }}</div>
-              <div class="txt">复习上次</div>
-            </div>
-            <div class="stat">
-              <div class="num">{{ currentStudy.write.length }}</div>
-              <div class="txt">复习之前</div>
-            </div>
-          </template>
-        </div>
-        <div class="flex items-end mt-4">
-          <BaseButton
-            size="large"
-            class="flex-1"
-            :disabled="!store.sdict.id"
-            :loading="loading"
-            @click="startPractice"
-          >
-            <div class="flex items-center gap-2">
-              <span class="line-height-[2]">{{ isSaveData ? '继续学习' : '开始学习' }}</span>
-              <IconFluentArrowCircleRight16Regular class="text-xl" />
-            </div>
-          </BaseButton>
-
-          <div v-if="false" class="w-full flex box-border cp color-white">
-            <div
-              @click="startPractice"
-              class="flex-1 rounded-l-lg center gap-2 py-1 bg-[var(--btn-primary)] hover:opacity-50"
-            >
-              <span class="line-height-[2]">{{ isSaveData ? '继续学习' : '开始学习' }}</span>
-              <IconFluentArrowCircleRight16Regular class="text-xl" />
-            </div>
-
-            <div class="relative group">
-              <div
-                class="w-10 rounded-r-lg h-full center bg-[var(--btn-primary)] hover:bg-gray border-solid border-2 border-l-gray border-transparent box-border"
-              >
-                <IconFluentChevronDown20Regular />
-              </div>
-
-              <div
-                class="space-y-2 pt-2 absolute z-2 right-0 border rounded opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 pointer-events-none group-hover:pointer-events-auto"
-              >
-                <div>
-                  <BaseButton
-                    size="large"
-                    type="orange"
-                    :loading="loading"
-                    @click="check(() => (showShufflePracticeSettingDialog = true))"
-                  >
-                    <div class="flex items-center gap-2">
-                      <span class="line-height-[2]">随机复习</span>
-                      <IconFluentArrowShuffle20Filled class="text-xl" />
-                    </div>
-                  </BaseButton>
-                </div>
-                <div>
-                  <BaseButton
-                    size="large"
-                    type="orange"
-                    :loading="loading"
-                    @click="check(() => (showShufflePracticeSettingDialog = true))"
-                  >
-                    <div class="flex items-center gap-2">
-                      <span class="line-height-[2]">重新学习</span>
-                      <IconFluentArrowShuffle20Filled class="text-xl" />
-                    </div>
-                  </BaseButton>
-                </div>
-              </div>
-            </div>
+          <div class="stat">
+            <div class="num">{{ currentStudy.review.length }}</div>
+            <div class="txt">复习上次</div>
           </div>
+          <div class="stat">
+            <div class="num">{{ currentStudy.write.length }}</div>
+            <div class="txt">复习之前</div>
+          </div>
+        </div>
+        <div class="flex items-end mt-4 gap-4 btn-no-margin">
+          <OptionButton
+            :class="settingStore.wordPracticeMode !== WordPracticeMode.Free ? 'flex-1 orange-btn' : 'primary-btn'"
+          >
+            <BaseButton
+              size="large"
+              :type="settingStore.wordPracticeMode !== WordPracticeMode.Free ? 'orange' : 'primary'"
+              :disabled="!store.sdict.id"
+              :loading="loading"
+              @click="systemPractice"
+            >
+              <div class="flex items-center gap-2">
+                <span class="line-height-[2]">{{ systemPracticeText }}</span>
+                <IconFluentArrowCircleRight16Regular class="text-xl" />
+              </div>
+            </BaseButton>
+            <template #options>
+              <BaseButton
+                class="w-full"
+                v-if="
+                  settingStore.wordPracticeMode !== WordPracticeMode.System &&
+                  settingStore.wordPracticeMode !== WordPracticeMode.Free
+                "
+                @click="startPractice(WordPracticeMode.System, true)"
+              >
+                智能学习
+              </BaseButton>
+
+              <BaseButton
+                class="w-full"
+                v-if="settingStore.wordPracticeMode !== WordPracticeMode.Review"
+                :disabled="!currentStudy.review.length && !currentStudy.write.length"
+                @click="startPractice(WordPracticeMode.Review, true)"
+              >
+                复习
+              </BaseButton>
+              <BaseButton
+                class="w-full"
+                v-if="settingStore.wordPracticeMode !== WordPracticeMode.Shuffle"
+                :disabled="store.sdict.lastLearnIndex < 10 && !store.sdict.complete"
+                @click="check(() => (showShufflePracticeSettingDialog = true))"
+              >
+                随机复习
+              </BaseButton>
+
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.IdentifyOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.IdentifyOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.IdentifyOnly] }}-->
+              <!--              </BaseButton>-->
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.ListenOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.ListenOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.ListenOnly] }}-->
+              <!--              </BaseButton>-->
+              <!--              <BaseButton-->
+              <!--                class="w-full"-->
+              <!--                v-if="settingStore.wordPracticeMode !== WordPracticeMode.DictationOnly"-->
+              <!--                @click="startPractice(WordPracticeMode.DictationOnly, true)"-->
+              <!--              >-->
+              <!--                {{ WordPracticeModeNameMap[WordPracticeMode.DictationOnly] }}-->
+              <!--              </BaseButton>-->
+            </template>
+          </OptionButton>
 
           <BaseButton
-            v-if="store.sdict.id && store.sdict.lastLearnIndex"
+            :class="settingStore.wordPracticeMode === WordPracticeMode.Free ? 'flex-1' : ''"
+            :type="settingStore.wordPracticeMode === WordPracticeMode.Free ? 'orange' : 'primary'"
             size="large"
-            type="orange"
             :loading="loading"
-            @click="check(() => (showShufflePracticeSettingDialog = true))"
+            @click="freePractice()"
           >
             <div class="flex items-center gap-2">
-              <span class="line-height-[2]">随机复习</span>
-              <IconFluentArrowShuffle20Filled class="text-xl" />
+              <span class="line-height-[2]">
+                {{
+                  settingStore.wordPracticeMode === WordPracticeMode.Free && isSaveData ? '继续自由练习' : '自由练习'
+                }}
+              </span>
+              <IconStreamlineColorPenDrawFlat class="text-xl" />
             </div>
           </BaseButton>
         </div>
@@ -464,11 +480,7 @@ let isNewHost = $ref(window.location.host === Host)
       <div class="flex justify-between">
         <div class="title">我的词典</div>
         <div class="flex gap-4 items-center">
-          <PopConfirm
-            title="确认删除所有选中词典？"
-            @confirm="handleBatchDel"
-            v-if="selectIds.length"
-          >
+          <PopConfirm title="确认删除所有选中词典？" @confirm="handleBatchDel" v-if="selectIds.length">
             <BaseIcon class="del" title="删除">
               <DeleteIcon />
             </BaseIcon>
@@ -486,15 +498,13 @@ let isNewHost = $ref(window.location.host === Host)
           >
             {{ isManageDict ? '取消' : '管理词典' }}
           </div>
-          <div class="color-link cursor-pointer" @click="nav('dict-detail', { isAdd: true })">
-            创建个人词典
-          </div>
+          <div class="color-link cursor-pointer" @click="nav('dict-detail', { isAdd: true })">创建个人词典</div>
         </div>
       </div>
       <div class="flex gap-4 flex-wrap mt-4">
         <Book
           :is-add="false"
-          quantifier="个词"
+          quantifier="词"
           :item="item"
           :checked="selectIds.includes(item.id)"
           @check="() => toggleSelect(item)"
@@ -517,7 +527,7 @@ let isNewHost = $ref(window.location.host === Host)
       <div class="flex gap-4 flex-wrap mt-4 min-h-50">
         <Book
           :is-add="false"
-          quantifier="个词"
+          quantifier="词"
           :item="item as any"
           v-for="(item, j) in recommendDictList"
           @click="goDictDetail(item as any)"
@@ -526,23 +536,13 @@ let isNewHost = $ref(window.location.host === Host)
     </div>
   </BasePage>
 
-  <PracticeSettingDialog
-    :show-left-option="false"
-    v-model="showPracticeSettingDialog"
-    @ok="savePracticeSetting"
-  />
+  <PracticeSettingDialog :show-left-option="false" v-model="showPracticeSettingDialog" @ok="savePracticeSetting" />
 
-  <ChangeLastPracticeIndexDialog
-    v-model="showChangeLastPracticeIndexDialog"
-    @ok="saveLastPracticeIndex"
-  />
+  <ChangeLastPracticeIndexDialog v-model="showChangeLastPracticeIndexDialog" @ok="saveLastPracticeIndex" />
 
   <PracticeWordListDialog :data="currentStudy" v-model="showPracticeWordListDialog" />
 
-  <ShufflePracticeSettingDialog
-    v-model="showShufflePracticeSettingDialog"
-    @ok="onShufflePracticeSettingOk"
-  />
+  <ShufflePracticeSettingDialog v-model="showShufflePracticeSettingDialog" @ok="onShufflePracticeSettingOk" />
 </template>
 
 <style scoped lang="scss">

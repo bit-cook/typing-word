@@ -418,8 +418,6 @@ defineExpose({ audioRef })
 
       <!-- 进度条区域 -->
       <div class="progress-section">
-        <!-- 时间显示 -->
-        <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
         <!-- 进度条 -->
         <div class="progress-container" @mousedown="handleProgressMouseDown" ref="progressBarRef">
           <div class="progress-track">
@@ -427,7 +425,8 @@ defineExpose({ audioRef })
             <div class="progress-thumb" :style="{ left: progress + '%' }"></div>
           </div>
         </div>
-
+        <!-- 时间显示 -->
+        <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</span>
       </div>
 
       <!-- 音量控制 -->

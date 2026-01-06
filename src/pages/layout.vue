@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ShortcutKey } from '@/types/types.ts'
 import Logo from '@/components/Logo.vue'
 import { useSettingStore } from '@/stores/setting.ts'
 import { useRouter } from 'vue-router'
@@ -7,6 +6,8 @@ import useTheme from '@/hooks/theme.ts'
 import BaseIcon from '@/components/BaseIcon.vue'
 import { useRuntimeStore } from '@/stores/runtime.ts'
 import { jump2Feedback } from '@/utils'
+import { watch } from 'vue'
+import { ShortcutKey } from '@/types/enum.ts'
 
 const settingStore = useSettingStore()
 const runtimeStore = useRuntimeStore()
@@ -17,13 +18,19 @@ const { toggleTheme, getTheme } = useTheme()
 function goHome() {
   window.location.href = '/'
 }
+watch(
+  () => settingStore.sideExpand,
+  n => {
+    document.documentElement.style.setProperty('--aside-width', n ? '12rem' : '4.5rem')
+  },{immediate: true}
+)
 </script>
 
 <template>
   <div class="layout anim">
     <!--    第一个aside 占位用-->
-    <div class="aside space" :class="{ expand: settingStore.sideExpand }"></div>
-    <div class="aside anim fixed" :class="{ expand: settingStore.sideExpand }">
+    <div class="aside space"></div>
+    <div class="aside anim fixed">
       <div class="top">
         <Logo v-if="settingStore.sideExpand" />
         <div class="row" @click="goHome">
@@ -42,11 +49,7 @@ function goHome() {
         <div class="row" @click="router.push('/setting')">
           <IconFluentSettings20Regular />
           <span v-if="settingStore.sideExpand">设置</span>
-          <div
-            class="red-point"
-            :class="!settingStore.sideExpand && 'top-1 right-0'"
-            v-if="runtimeStore.isNew"
-          ></div>
+          <div class="red-point" :class="!settingStore.sideExpand && 'top-1 right-0'" v-if="runtimeStore.isNew"></div>
         </div>
         <div class="row" @click="router.push('/feedback')">
           <IconFluentCommentEdit20Regular />
@@ -88,42 +91,27 @@ function goHome() {
           <IconFluentHome20Regular />
           <span>主页</span>
         </div>
-        <div
-          class="nav-item"
-          @click="router.push('/words')"
-          :class="{ active: $route.path.includes('/words') }"
-        >
+        <div class="nav-item" @click="router.push('/words')" :class="{ active: $route.path.includes('/words') }">
           <IconFluentTextUnderlineDouble20Regular />
           <span>单词</span>
         </div>
-        <div
-          class="nav-item"
-          @click="router.push('/articles')"
-          :class="{ active: $route.path.includes('/articles') }"
-        >
+        <div class="nav-item" @click="router.push('/articles')" :class="{ active: $route.path.includes('/articles') }">
           <IconFluentBookLetter20Regular />
           <span>文章</span>
         </div>
-        <div
-          class="nav-item"
-          @click="router.push('/setting')"
-          :class="{ active: $route.path === '/setting' }"
-        >
+        <div class="nav-item" @click="router.push('/setting')" :class="{ active: $route.path === '/setting' }">
           <IconFluentSettings20Regular />
           <span>设置</span>
           <div class="red-point" v-if="runtimeStore.isNew"></div>
         </div>
       </div>
-      <div
-        class="nav-toggle"
-        @click="settingStore.mobileNavCollapsed = !settingStore.mobileNavCollapsed"
-      >
+      <div class="nav-toggle" @click="settingStore.mobileNavCollapsed = !settingStore.mobileNavCollapsed">
         <IconFluentChevronDown20Filled v-if="!settingStore.mobileNavCollapsed" />
         <IconFluentChevronUp20Filled v-else />
       </div>
     </div>
 
-    <div class="flex-1 z-1 relative main-content">
+    <div class="flex-1 z-1 relative main-content overflow-x-hidden">
       <router-view></router-view>
     </div>
   </div>
@@ -146,7 +134,7 @@ function goHome() {
   flex-direction: column;
   justify-content: space-between;
   box-shadow: rgb(0 0 0 / 3%) 0px 0px 12px 0px;
-  width: 4.5rem;
+  width: var(--aside-width);
   z-index: 2;
 
   .row {
@@ -166,10 +154,6 @@ function goHome() {
       flex-shrink: 0;
       font-size: 1.3rem !important;
     }
-  }
-
-  &.expand {
-    width: var(--aside-width);
   }
 }
 

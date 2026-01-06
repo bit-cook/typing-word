@@ -32,7 +32,7 @@ const isMoveBottom = $computed(() => {
 .word-space {
   position: relative;
   display: inline-block;
-  width: 0.8rem;
+  width: 0.6rem;
   height: 1.5rem;
   box-sizing: border-box;
   margin: 0 1px;

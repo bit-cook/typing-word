@@ -1,22 +1,23 @@
 <script setup lang="ts">
-
-import { Dict, DictId, DictType } from "@/types/types.ts";
-import { cloneDeep } from "@/utils";
+import type { Dict } from '@/types/types.ts'
+import { cloneDeep } from '@/utils'
 import Toast from '@/components/base/toast/Toast.ts'
-import { onMounted, reactive } from "vue";
-import { useRuntimeStore } from "@/stores/runtime.ts";
-import { useBaseStore } from "@/stores/base.ts";
-import BaseButton from "@/components/BaseButton.vue";
-import { getDefaultDict } from "@/types/func.ts";
-import { Option, Select } from "@/components/base/select";
-import BaseInput from "@/components/base/BaseInput.vue";
-import Form from "@/components/base/form/Form.vue";
-import FormItem from "@/components/base/form/FormItem.vue";
-import { addDict } from "@/apis";
-import { AppEnv } from "@/config/env.ts";
+import { onMounted, reactive } from 'vue'
+import { useRuntimeStore } from '@/stores/runtime.ts'
+import { useBaseStore } from '@/stores/base.ts'
+import BaseButton from '@/components/BaseButton.vue'
+import { getDefaultDict } from '@/types/func.ts'
+import { Option, Select } from '@/components/base/select'
+import BaseInput from '@/components/base/BaseInput.vue'
+import Form from '@/components/base/form/Form.vue'
+import FormItem from '@/components/base/form/FormItem.vue'
+import { addDict } from '@/apis'
+import { AppEnv, DictId } from '@/config/env.ts'
+import { nanoid } from 'nanoid'
+import { DictType } from '@/types/enum.ts'
 
 const props = defineProps<{
-  isAdd: boolean,
+  isAdd: boolean
   isBook: boolean
 }>()
 const emit = defineEmits<{
@@ -33,20 +34,20 @@ const DefaultDictForm = {
   tags: [],
   translateLanguage: 'zh-CN',
   language: 'en',
-  type: DictType.article
+  type: DictType.article,
 }
 let dictForm: any = $ref(cloneDeep(DefaultDictForm))
 const dictFormRef = $ref()
 let loading = $ref(false)
 const dictRules = reactive({
   name: [
-    {required: true, message: '请输入名称', trigger: 'blur'},
-    {max: 20, message: '名称不能超过20个字符', trigger: 'blur'},
+    { required: true, message: '请输入名称', trigger: 'blur' },
+    { max: 20, message: '名称不能超过20个字符', trigger: 'blur' },
   ],
 })
 
 async function onSubmit() {
-  await dictFormRef.validate(async (valid) => {
+  await dictFormRef.validate(async valid => {
     if (valid) {
       let data: Dict = getDefaultDict(dictForm)
       data.type = props.isBook ? DictType.article : DictType.word
@@ -77,10 +78,15 @@ async function onSubmit() {
       } else {
         let rIndex = source.bookList.findIndex(v => v.id === data.id)
         //任意修改，都将其变为自定义词典
-        if (!data.custom && ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect, DictId.articleCollect].includes(data.en_name || data.id)) {
+        if (
+          !data.custom &&
+          ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect, DictId.articleCollect].includes(
+            data.en_name || data.id
+          )
+        ) {
           data.custom = true
           if (!data.id.includes('_custom')) {
-            data.id += '_custom'
+            data.id += '_custom_' + nanoid(6)
           }
         }
         runtimeStore.editDict = data
@@ -105,36 +111,31 @@ onMounted(() => {
     dictForm = cloneDeep(runtimeStore.editDict)
   }
 })
-
 </script>
 
 <template>
   <div class="w-120 mt-4">
-    <Form
-        ref="dictFormRef"
-        :rules="dictRules"
-        :model="dictForm"
-        label-width="8rem">
+    <Form ref="dictFormRef" :rules="dictRules" :model="dictForm" label-width="8rem">
       <FormItem label="名称" prop="name">
-        <BaseInput v-model="dictForm.name"/>
+        <BaseInput v-model="dictForm.name" />
       </FormItem>
       <FormItem label="描述">
-        <BaseInput v-model="dictForm.description" textarea/>
+        <BaseInput v-model="dictForm.description" textarea />
       </FormItem>
       <FormItem label="原文语言" v-if="false">
         <Select v-model="dictForm.language" placeholder="请选择选项">
-          <Option label="英语" value="en"/>
-          <Option label="德语" value="de"/>
-          <Option label="日语" value="ja"/>
-          <Option label="代码" value="code"/>
+          <Option label="英语" value="en" />
+          <Option label="德语" value="de" />
+          <Option label="日语" value="ja" />
+          <Option label="代码" value="code" />
         </Select>
       </FormItem>
       <FormItem label="译文语言" v-if="false">
         <Select v-model="dictForm.translateLanguage" placeholder="请选择选项">
-          <Option label="中文" value="zh-CN"/>
-          <Option label="英语" value="en"/>
-          <Option label="德语" value="de"/>
-          <Option label="日语" value="ja"/>
+          <Option label="中文" value="zh-CN" />
+          <Option label="英语" value="en" />
+          <Option label="德语" value="de" />
+          <Option label="日语" value="ja" />
         </Select>
       </FormItem>
       <div class="center">
@@ -145,7 +146,4 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
-
-
-</style>
+<style scoped lang="scss"></style>

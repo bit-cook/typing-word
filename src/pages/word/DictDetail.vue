@@ -1,7 +1,5 @@
 <script setup lang="tsx">
-import { DictId, Sort } from '@/types/types.ts'
-
-import { add2MyDict, detail } from '@/apis'
+import { detail } from '@/apis'
 import BackIcon from '@/components/BackIcon.vue'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseIcon from '@/components/BaseIcon.vue'
@@ -15,7 +13,7 @@ import Form from '@/components/base/form/Form.vue'
 import FormItem from '@/components/base/form/FormItem.vue'
 import Toast from '@/components/base/toast/Toast.ts'
 import DeleteIcon from '@/components/icon/DeleteIcon.vue'
-import { AppEnv, LIB_JS_URL, PracticeSaveWordKey, TourConfig } from '@/config/env.ts'
+import { AppEnv, DictId, LIB_JS_URL, TourConfig } from '@/config/env.ts'
 import { getCurrentStudyWord } from '@/hooks/dict.ts'
 import EditBook from '@/pages/article/components/EditBook.vue'
 import PracticeSettingDialog from '@/pages/word/components/PracticeSettingDialog.vue'
@@ -23,22 +21,15 @@ import { useBaseStore } from '@/stores/base.ts'
 import { useRuntimeStore } from '@/stores/runtime.ts'
 import { useSettingStore } from '@/stores/setting.ts'
 import { getDefaultDict } from '@/types/func.ts'
-import {
-  _getDictDataByUrl,
-  _nextTick,
-  convertToWord,
-  isMobile,
-  loadJsLib,
-  reverse,
-  shuffle,
-  useNav,
-} from '@/utils'
+import { _getDictDataByUrl, _nextTick, convertToWord, isMobile, loadJsLib, reverse, shuffle, useNav } from '@/utils'
 import { MessageBox } from '@/utils/MessageBox.tsx'
 import { nanoid } from 'nanoid'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { wordDelete } from '@/apis/words.ts'
 import { copyOfficialDict } from '@/apis/dict.ts'
+import { PRACTICE_WORD_CACHE } from '@/utils/cache.ts'
+import { Sort } from '@/types/enum.ts'
 
 const runtimeStore = useRuntimeStore()
 const base = useBaseStore()
@@ -80,13 +71,10 @@ function syncDictInMyStudyList(study = false) {
 
     runtimeStore.editDict.words = allList
     let temp = runtimeStore.editDict
-    if (
-      !temp.custom &&
-      ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect].includes(temp.id)
-    ) {
+    if (!temp.custom && ![DictId.wordKnown, DictId.wordWrong, DictId.wordCollect].includes(temp.id)) {
       temp.custom = true
       if (!temp.id.includes('_custom')) {
-        temp.id += '_custom'
+        temp.id += '_custom_' + nanoid(6)
       }
     }
     temp.length = temp.words.length
@@ -192,17 +180,13 @@ function word2Str(word) {
   res.trans = word.trans.map(v => (v.pos + v.cn).replaceAll('"', '')).join('\n')
   res.sentences = word.sentences.map(v => (v.c + '\n' + v.cn).replaceAll('"', '')).join('\n\n')
   res.phrases = word.phrases.map(v => (v.c + '\n' + v.cn).replaceAll('"', '')).join('\n\n')
-  res.synos = word.synos
-    .map(v => (v.pos + v.cn + '\n' + v.ws.join('/')).replaceAll('"', ''))
-    .join('\n\n')
+  res.synos = word.synos.map(v => (v.pos + v.cn + '\n' + v.ws.join('/')).replaceAll('"', '')).join('\n\n')
   res.relWords = word.relWords.root
     ? '词根:' +
       word.relWords.root +
       '\n\n' +
       word.relWords.rels
-        .map(v =>
-          (v.pos + '\n' + v.words.map(v => v.c + ':' + v.cn).join('\n')).replaceAll('"', '')
-        )
+        .map(v => (v.pos + '\n' + v.words.map(v => v.c + ':' + v.cn).join('\n')).replaceAll('"', ''))
         .join('\n\n')
     : ''
   res.etymology = word.etymology.map(v => (v.t + '\n' + v.d).replaceAll('"', '')).join('\n\n')
@@ -289,7 +273,7 @@ const { nav } = useNav()
 
 //todo 可以和首页合并
 async function startPractice(query = {}) {
-  localStorage.removeItem(PracticeSaveWordKey.key)
+  localStorage.removeItem(PRACTICE_WORD_CACHE.key)
   studyLoading = true
   await base.changeDict(runtimeStore.editDict)
   studyLoading = false
@@ -520,10 +504,7 @@ function getLocalList({ pageNo, pageSize, searchKey }) {
 }
 
 async function requestList({ pageNo, pageSize, searchKey }) {
-  if (
-    !dict.custom &&
-    ![DictId.wordCollect, DictId.wordWrong, DictId.wordKnown].includes(dict.en_name || dict.id)
-  ) {
+  if (!dict.custom && ![DictId.wordCollect, DictId.wordWrong, DictId.wordKnown].includes(dict.en_name || dict.id)) {
     // 非自定义词典，直接请求json
 
     //如果没数据则请求
@@ -581,50 +562,40 @@ defineRender(() => {
         <div className="card mb-0 dict-detail-card flex flex-col">
           <div class="dict-header flex justify-between items-center relative">
             <BackIcon class="dict-back z-2" />
-            <div class="dict-title absolute page-title text-align-center w-full">
-              {runtimeStore.editDict.name}
-            </div>
+            <div class="dict-title absolute page-title text-align-center w-full">{runtimeStore.editDict.name}</div>
             <div class="dict-actions flex">
-              <BaseButton
-                loading={studyLoading || loading}
-                type="info"
-                onClick={() => (isEdit = true)}
-              >
+              <BaseButton loading={studyLoading || loading} type="info" onClick={() => (isEdit = true)}>
                 编辑
+              </BaseButton>
+              <BaseButton loading={studyLoading || loading} type="info" onClick={startTest}>
+                测试
               </BaseButton>
               <BaseButton id="study" loading={studyLoading || loading} onClick={addMyStudyList}>
                 学习
               </BaseButton>
-              <BaseButton loading={studyLoading || loading} onClick={startTest}>
-                测试
-              </BaseButton>
             </div>
           </div>
-          <div class="text-lg  mt-2">介绍：{runtimeStore.editDict.description}</div>
-          <div class="line my-3"></div>
+          {dict.description && (
+            <>
+              <div class="text-lg  mt-2">介绍：{dict.description}</div>
+              <div class="line my-3"></div>
+            </>
+          )}
 
           {/* 移动端标签页导航 */}
           {isMob && isOperate && (
             <div class="tab-navigation mb-3">
-              <div
-                class={`tab-item ${activeTab === 'list' ? 'active' : ''}`}
-                onClick={() => (activeTab = 'list')}
-              >
+              <div class={`tab-item ${activeTab === 'list' ? 'active' : ''}`} onClick={() => (activeTab = 'list')}>
                 单词列表
               </div>
-              <div
-                class={`tab-item ${activeTab === 'edit' ? 'active' : ''}`}
-                onClick={() => (activeTab = 'edit')}
-              >
+              <div class={`tab-item ${activeTab === 'edit' ? 'active' : ''}`} onClick={() => (activeTab = 'edit')}>
                 {wordForm.id ? '编辑' : '添加'}单词
               </div>
             </div>
           )}
 
           <div class="flex flex-1 overflow-hidden content-area">
-            <div
-              class={`word-list-section ${isMob && isOperate && activeTab !== 'list' ? 'mobile-hidden' : ''}`}
-            >
+            <div class={`word-list-section ${isMob && isOperate && activeTab !== 'list' ? 'mobile-hidden' : ''}`}>
               <BaseTable
                 ref={tableRef}
                 class="h-full"
@@ -640,6 +611,8 @@ defineRender(() => {
                 {val => (
                   <WordItem
                     showTransPop={false}
+                    onClick={() => editWord(val.item)}
+                    index={val.index}
                     showCollectIcon={false}
                     showMarkIcon={false}
                     item={val.item}
@@ -648,11 +621,7 @@ defineRender(() => {
                       prefix: () => val.checkbox(val.item),
                       suffix: () => (
                         <div class="flex flex-col">
-                          <BaseIcon
-                            class="option-icon"
-                            onClick={() => editWord(val.item)}
-                            title="编辑"
-                          >
+                          <BaseIcon class="option-icon" onClick={() => editWord(val.item)} title="编辑">
                             <IconFluentTextEditStyle20Regular />
                           </BaseIcon>
                           <PopConfirm title="确认删除？" onConfirm={() => batchDel([val.item.id])}>
@@ -668,9 +637,7 @@ defineRender(() => {
               </BaseTable>
             </div>
             {isOperate ? (
-              <div
-                class={`edit-section flex-1 flex flex-col ${isMob && activeTab !== 'edit' ? 'mobile-hidden' : ''}`}
-              >
+              <div class={`edit-section flex-1 flex flex-col ${isMob && activeTab !== 'edit' ? 'mobile-hidden' : ''}`}>
                 <div class="common-title">{wordForm.id ? '修改' : '添加'}单词</div>
                 <Form
                   class="flex-1 overflow-auto pr-2"
@@ -680,22 +647,13 @@ defineRender(() => {
                   label-width="7rem"
                 >
                   <FormItem label="单词" prop="word">
-                    <BaseInput
-                      modelValue={wordForm.word}
-                      onUpdate:modelValue={e => (wordForm.word = e)}
-                    ></BaseInput>
+                    <BaseInput modelValue={wordForm.word} onUpdate:modelValue={e => (wordForm.word = e)}></BaseInput>
                   </FormItem>
                   <FormItem label="英音音标">
-                    <BaseInput
-                      modelValue={wordForm.phonetic0}
-                      onUpdate:modelValue={e => (wordForm.phonetic0 = e)}
-                    />
+                    <BaseInput modelValue={wordForm.phonetic0} onUpdate:modelValue={e => (wordForm.phonetic0 = e)} />
                   </FormItem>
                   <FormItem label="美音音标">
-                    <BaseInput
-                      modelValue={wordForm.phonetic1}
-                      onUpdate:modelValue={e => (wordForm.phonetic1 = e)}
-                    />
+                    <BaseInput modelValue={wordForm.phonetic1} onUpdate:modelValue={e => (wordForm.phonetic1 = e)} />
                   </FormItem>
                   <FormItem label="翻译">
                     <Textarea
@@ -776,12 +734,7 @@ defineRender(() => {
             </div>
           </div>
           <div class="center">
-            <EditBook
-              isAdd={isAdd}
-              isBook={false}
-              onClose={formClose}
-              onSubmit={() => (isEdit = isAdd = false)}
-            />
+            <EditBook isAdd={isAdd} isBook={false} onClose={formClose} onSubmit={() => (isEdit = isAdd = false)} />
           </div>
         </div>
       )}

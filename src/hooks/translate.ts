@@ -1,6 +1,7 @@
-import {Article, Sentence, TranslateEngine} from "@/types/types.ts";
+import type {Article, Sentence} from "@/types/types.ts";
 import Baidu from "@/libs/translate/baidu";
 import {Translator} from "@/libs/translate/translator/index.ts";
+import {TranslateEngine} from "@/types/enum.ts";
 
 export function getSentenceAllTranslateText(article: Article) {
   return article.sections.map(v => v.map(s => s.translate.trim()).filter(v => v).join(' \n')).filter(v => v).join(' \n\n');

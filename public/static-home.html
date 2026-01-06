@@ -311,6 +311,7 @@
             width: 100%;
             margin-bottom: 1rem;
             color: var(--color-card-text);
+          display: none;
         }
 
         .container {
@@ -438,12 +439,12 @@
             })();
 
             // umami
-            // (function () {
-            //     var umami = document.createElement("script");
-            //     umami.src = 'https://typewords.cc/libs/s.js'
-            //     umami.setAttribute("data-website-id", "160308c9-7900-4b1d-a0b1-c3b25a9530f6");
-            // document.head.appendChild(umami);
-            // })();
+            (function () {
+                var umami = document.createElement("script");
+                umami.src = 'https://typewords.cc/libs/s.js'
+                umami.setAttribute("data-website-id", "160308c9-7900-4b1d-a0b1-c3b25a9530f6");
+            document.head.appendChild(umami);
+            })();
 
             // umami-saas
             // (function () {
@@ -714,9 +715,9 @@
                 </div>
             </a>
         </div>
-        
+
         <div><a href="https://beian.mps.gov.cn/#/query/webSearch?code=51015602001426" target="_blank">川公网安备51015602001426号	</a></div>
-        
+
         <div><a href="https://beian.miit.gov.cn/" target="_blank">蜀ICP备2025157466号-2</a></div>
     </div>
 

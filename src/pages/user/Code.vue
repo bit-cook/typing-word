@@ -1,10 +1,10 @@
 <script setup lang="ts">
 
-import {CodeType} from "@/types/types.ts";
 import BaseButton from "@/components/BaseButton.vue";
 import {sendCode} from "@/apis/user.ts";
 import {PHONE_CONFIG} from "@/config/auth.ts";
 import Toast from "@/components/base/toast/Toast.ts";
+import {CodeType} from "@/types/enum.ts";
 
 let isSendingCode = $ref(false)
 let codeCountdown = $ref(0)

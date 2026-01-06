@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {watch} from "vue";
-import {DictResource} from "@/types/types.ts";
+import type {DictResource} from "@/types/types.ts";
 import DictList from "@/components/list/DictList.vue";
 
 const props = defineProps<{
@@ -69,16 +69,16 @@ watch(() => props.groupByTag, () => {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    
+
     .category {
       font-size: 1rem;
       font-weight: bold;
     }
-    
+
     .tags {
       margin: 0.5rem 0;
       gap: 0.3rem;
-      
+
       .tag {
         padding: 0.3rem 0.8rem;
         font-size: 0.9rem;
@@ -98,7 +98,7 @@ watch(() => props.groupByTag, () => {
     .category {
       font-size: 0.9rem;
     }
-    
+
     .tags {
       .tag {
         padding: 0.2rem 0.6rem;

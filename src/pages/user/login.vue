@@ -1,26 +1,26 @@
 <script setup lang="tsx">
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import BaseInput from "@/components/base/BaseInput.vue";
-import BaseButton from "@/components/BaseButton.vue";
-import { APP_NAME } from "@/config/env.ts";
-import { useUserStore } from "@/stores/user.ts";
-import { loginApi, LoginParams, registerApi, resetPasswordApi } from "@/apis/user.ts";
-import { accountRules, codeRules, passwordRules, phoneRules } from "@/utils/validation.ts";
-import Toast from "@/components/base/toast/Toast.ts";
-import FormItem from "@/components/base/form/FormItem.vue";
-import Form from "@/components/base/form/Form.vue";
-import Notice from "@/pages/user/Notice.vue";
-import { FormInstance } from "@/components/base/form/types.ts";
-import { PASSWORD_CONFIG, PHONE_CONFIG } from "@/config/auth.ts";
-import { CodeType, ImportStatus } from "@/types/types.ts";
-import Code from "@/pages/user/Code.vue";
-import { isNewUser, jump2Feedback, sleep, useNav } from "@/utils";
-import Header from "@/components/Header.vue";
-import PopConfirm from "@/components/PopConfirm.vue";
-import { useExport } from "@/hooks/export.ts";
-import { getProgress, upload, uploadImportData } from "@/apis";
-import { Exception } from "sass";
+import BaseInput from '@/components/base/BaseInput.vue'
+import BaseButton from '@/components/BaseButton.vue'
+import { APP_NAME } from '@/config/env.ts'
+import { useUserStore } from '@/stores/user.ts'
+import { loginApi, LoginParams, registerApi, resetPasswordApi } from '@/apis/user.ts'
+import { accountRules, codeRules, passwordRules, phoneRules } from '@/utils/validation.ts'
+import Toast from '@/components/base/toast/Toast.ts'
+import FormItem from '@/components/base/form/FormItem.vue'
+import Form from '@/components/base/form/Form.vue'
+import Notice from '@/pages/user/Notice.vue'
+import { FormInstance } from '@/components/base/form/types.ts'
+import { PASSWORD_CONFIG, PHONE_CONFIG } from '@/config/auth.ts'
+import Code from '@/pages/user/Code.vue'
+import { isNewUser, jump2Feedback, sleep, useNav } from '@/utils'
+import Header from '@/components/Header.vue'
+import PopConfirm from '@/components/PopConfirm.vue'
+import { useExport } from '@/hooks/export.ts'
+import { getProgress, upload, uploadImportData } from '@/apis'
+import { Exception } from 'sass'
+import { CodeType, ImportStatus } from '@/types/enum.ts'
 
 // 状态管理
 const userStore = useUserStore()
@@ -41,28 +41,25 @@ let waitForImportConfirmation = $ref(true)
 
 const QR_EXPIRE_TIME = 5 * 60 * 1000 // 5分钟过期
 
-
-let phoneLoginForm = $ref({phone: '', code: ''})
+let phoneLoginForm = $ref({ phone: '', code: '' })
 let phoneLoginFormRef = $ref<FormInstance>()
 let phoneLoginFormRules = {
   phone: phoneRules,
-  code: codeRules
+  code: codeRules,
 }
 
-
-let loginForm2 = $ref({account: '', password: ''})
+let loginForm2 = $ref({ account: '', password: '' })
 let loginForm2Ref = $ref<FormInstance>()
 let loginForm2Rules = {
   account: accountRules,
   password: passwordRules,
 }
 
-
 const registerForm = $ref({
   account: '',
   password: '',
   confirmPassword: '',
-  code: ''
+  code: '',
 })
 let registerFormRef = $ref<FormInstance>()
 // 注册表单规则和引用
@@ -71,23 +68,23 @@ let registerFormRules = {
   code: codeRules,
   password: passwordRules,
   confirmPassword: [
-    {required: true, message: '请再次输入密码', trigger: 'blur'},
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
     {
       validator: (rule: any, value: any) => {
         if (value !== registerForm.password) {
           throw new Error('两次密码输入不一致')
         }
-      }, trigger: 'blur'
+      },
+      trigger: 'blur',
     },
   ],
 }
-
 
 const forgotForm = $ref({
   account: '',
   code: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 let forgotFormRef = $ref<FormInstance>()
 // 忘记密码表单规则和引用
@@ -96,13 +93,14 @@ let forgotFormRules = {
   code: codeRules,
   newPassword: passwordRules,
   confirmPassword: [
-    {required: true, message: '请再次输入新密码', trigger: 'blur'},
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
     {
       validator: (rule: any, value: any) => {
         if (value !== forgotForm.newPassword) {
           throw new Error('两次密码输入不一致')
         }
-      }, trigger: 'blur'
+      },
+      trigger: 'blur',
     },
   ],
 }
@@ -122,17 +120,17 @@ function loginSuccess(token: string) {
 
 // 统一登录处理
 async function handleLogin() {
-  currentFormRef.validate(async (valid) => {
-    if (!valid) return;
+  currentFormRef.validate(async valid => {
+    if (!valid) return
     try {
       loading = true
       let data = {}
       //手机号登录
       if (loginType === 'code') {
-        data = {...phoneLoginForm, type: 'code'}
+        data = { ...phoneLoginForm, type: 'code' }
       } else {
         //密码登录
-        data = {...loginForm2, type: 'pwd'}
+        data = { ...loginForm2, type: 'pwd' }
       }
       let res = await loginApi(data as LoginParams)
       if (res.success) {
@@ -153,7 +151,7 @@ async function handleLogin() {
 
 // 注册
 async function handleRegister() {
-  registerFormRef.validate(async (valid) => {
+  registerFormRef.validate(async valid => {
     if (!valid) return
     try {
       loading = true
@@ -175,7 +173,7 @@ async function handleRegister() {
 
 // 忘记密码
 async function handleForgotPassword() {
-  forgotFormRef.validate(async (valid) => {
+  forgotFormRef.validate(async valid => {
     if (!valid) return
     try {
       loading = true
@@ -224,7 +222,8 @@ async function handleWechatLogin() {
     // wechatQRUrl = response.qrUrl
 
     // 暂时使用占位二维码
-    wechatQRUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSI+55So5o6l566h55CG6L295Lit6K+B77yBPC90ZXh0Pgo8L3N2Zz4K'
+    wechatQRUrl =
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSI+55So5o6l566h55CG6L295Lit6K+B77yBPC90ZXh0Pgo8L3N2Zz4K'
 
     // 模拟轮询检查扫码状态
     qrCheckInterval = setInterval(async () => {
@@ -246,7 +245,6 @@ async function handleWechatLogin() {
       qrCheckInterval = null
       Toast.info('二维码已过期，请点击刷新')
     }, QR_EXPIRE_TIME)
-
   } catch (error) {
     console.error('Wechat login error:', error)
     Toast.error('微信登录失败')
@@ -288,13 +286,13 @@ onBeforeUnmount(() => {
 })
 
 enum ImportStep {
-  CONFIRMATION,//等待确认
-  PROCESSING,//处理中
-  SUCCESS,//成功
-  FAIL,//失败
+  CONFIRMATION, //等待确认
+  PROCESSING, //处理中
+  SUCCESS, //成功
+  FAIL, //失败
 }
 
-const {exportData} = useExport()
+const { exportData } = useExport()
 let importStep = $ref<ImportStep>(ImportStep.CONFIRMATION)
 let isImporting = $ref(false)
 let reason = $ref('')
@@ -311,9 +309,9 @@ async function startSync() {
     let res = await exportData('')
     reason = '上传数据中'
     let formData = new FormData()
-    formData.append('file', res, "example.zip")
+    formData.append('file', res, 'example.zip')
     let result = await uploadImportData(formData, progressEvent => {
-      let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
       reason = `上传进度(${percent}%)`
     })
     if (result.success) {
@@ -342,7 +340,7 @@ async function startSync() {
         }
       }, 2000)
     } else {
-      throw new Error(`同步失败，${result.msg ? ('原因: ' + result.msg) : ''}，请联系管理员`)
+      throw new Error(`同步失败，${result.msg ? '原因: ' + result.msg : ''}，请联系管理员`)
     }
   } catch (error) {
     Toast.error(error.message || '同步失败')
@@ -356,13 +354,9 @@ function logout() {
   waitForImportConfirmation = false
 }
 
-function forgetData() {
+function forgetData() {}
 
-}
-
-function goHome(){
-
-}
+function goHome() {}
 </script>
 
 <template>
@@ -379,88 +373,83 @@ function goHome(){
             <!-- Tab切换 -->
             <div class="center gap-8 mb-6">
               <div
-                  class="center cp transition-colors"
-                  :class="loginType === 'code' ? 'link font-medium' : 'text-gray-600'"
-                  @click="loginType = 'code'"
+                class="center cp transition-colors"
+                :class="loginType === 'code' ? 'link font-medium' : 'text-gray-600'"
+                @click="loginType = 'code'"
               >
                 <div>
                   <span>验证码登录</span>
-                  <div
-                      v-opacity="loginType === 'code'"
-                      class="mt-1 h-0.5 bg-blue-600"
-                  ></div>
+                  <div v-opacity="loginType === 'code'" class="mt-1 h-0.5 bg-blue-600"></div>
                 </div>
               </div>
               <div
-                  class="center cp transition-colors"
-                  :class="loginType === 'password' ? 'link font-medium' : 'text-gray-600'"
-                  @click="loginType = 'password'"
+                class="center cp transition-colors"
+                :class="loginType === 'password' ? 'link font-medium' : 'text-gray-600'"
+                @click="loginType = 'password'"
               >
                 <div>
                   <span>密码登录</span>
-                  <div
-                      v-opacity="loginType === 'password'"
-                      class="mt-1 h-0.5 bg-blue-600"
-                  ></div>
+                  <div v-opacity="loginType === 'password'" class="mt-1 h-0.5 bg-blue-600"></div>
                 </div>
               </div>
             </div>
 
             <!-- 验证码登录表单 -->
             <Form
-                v-if="loginType === 'code'"
-                ref="phoneLoginFormRef"
-                :rules="phoneLoginFormRules"
-                :model="phoneLoginForm">
+              v-if="loginType === 'code'"
+              ref="phoneLoginFormRef"
+              :rules="phoneLoginFormRules"
+              :model="phoneLoginForm"
+            >
               <FormItem prop="phone">
-                <BaseInput v-model="phoneLoginForm.phone"
-                           type="tel"
-                           name="username"
-                           autocomplete="tel"
-                           size="large"
-                           placeholder="请输入手机号"
+                <BaseInput
+                  v-model="phoneLoginForm.phone"
+                  type="tel"
+                  name="username"
+                  autocomplete="tel"
+                  size="large"
+                  placeholder="请输入手机号"
                 />
               </FormItem>
               <FormItem prop="code">
                 <div class="flex gap-2">
                   <BaseInput
-                      v-model="phoneLoginForm.code"
-                      type="code"
-                      size="large"
-                      :max-length="PHONE_CONFIG.codeLength"
-                      placeholder="请输入验证码"
+                    v-model="phoneLoginForm.code"
+                    type="code"
+                    size="large"
+                    :max-length="PHONE_CONFIG.codeLength"
+                    placeholder="请输入验证码"
                   />
-                  <Code :validate-field="() => phoneLoginFormRef.validateField('phone')"
-                        :type="CodeType.Login"
-                        :val="phoneLoginForm.phone"/>
+                  <Code
+                    :validate-field="() => phoneLoginFormRef.validateField('phone')"
+                    :type="CodeType.Login"
+                    :val="phoneLoginForm.phone"
+                  />
                 </div>
               </FormItem>
             </Form>
 
             <!-- 密码登录表单 -->
-            <Form
-                v-else
-                ref="loginForm2Ref"
-                :rules="loginForm2Rules"
-                :model="loginForm2">
+            <Form v-else ref="loginForm2Ref" :rules="loginForm2Rules" :model="loginForm2">
               <FormItem prop="account">
-                <BaseInput v-model="loginForm2.account"
-                           type="email"
-                           name="username"
-                           autocomplete="email"
-                           size="large"
-                           placeholder="请输入手机号/邮箱地址"
+                <BaseInput
+                  v-model="loginForm2.account"
+                  type="email"
+                  name="username"
+                  autocomplete="email"
+                  size="large"
+                  placeholder="请输入手机号/邮箱地址"
                 />
               </FormItem>
               <FormItem prop="password">
                 <div class="flex gap-2">
                   <BaseInput
-                      v-model="loginForm2.password"
-                      type="password"
-                      name="password"
-                      autocomplete="current-password"
-                      size="large"
-                      placeholder="请输入密码"
+                    v-model="loginForm2.password"
+                    type="password"
+                    name="password"
+                    autocomplete="current-password"
+                    size="large"
+                    placeholder="请输入密码"
                   />
                 </div>
               </FormItem>
@@ -470,14 +459,7 @@ function goHome(){
               <span v-if="loginType === 'code'">，未注册的手机号将自动注册</span>
             </Notice>
 
-            <BaseButton
-                class="w-full"
-                size="large"
-                :loading="loading"
-                @click="handleLogin"
-            >
-              登录
-            </BaseButton>
+            <BaseButton class="w-full" size="large" :loading="loading" @click="handleLogin"> 登录 </BaseButton>
 
             <!-- 底部操作链接 - 只在密码登录时显示 -->
             <div class="mt-4 flex justify-between text-sm" v-opacity="loginType !== 'code'">
@@ -488,131 +470,116 @@ function goHome(){
 
           <!-- 注册模式 -->
           <div v-else-if="currentMode === 'register'">
-            <Header @click="switchMode('login')" title="注册新账号"/>
+            <Header @click="switchMode('login')" title="注册新账号" />
 
-            <Form
-                ref="registerFormRef"
-                :rules="registerFormRules"
-                :model="registerForm">
+            <Form ref="registerFormRef" :rules="registerFormRules" :model="registerForm">
               <FormItem prop="account">
                 <BaseInput
-                    v-model="registerForm.account"
-                    type="tel"
-                    name="username"
-                    autocomplete="username"
-                    size="large"
-                    placeholder="请输入手机号/邮箱地址"
+                  v-model="registerForm.account"
+                  type="tel"
+                  name="username"
+                  autocomplete="username"
+                  size="large"
+                  placeholder="请输入手机号/邮箱地址"
                 />
               </FormItem>
               <FormItem prop="code">
                 <div class="flex gap-2">
                   <BaseInput
-                      v-model="registerForm.code"
-                      type="code"
-                      size="large"
-                      placeholder="请输入验证码"
-                      :max-length="PHONE_CONFIG.codeLength"
+                    v-model="registerForm.code"
+                    type="code"
+                    size="large"
+                    placeholder="请输入验证码"
+                    :max-length="PHONE_CONFIG.codeLength"
                   />
-                  <Code :validate-field="() => registerFormRef.validateField('account')"
-                        :type="CodeType.Register"
-                        :val="registerForm.account"/>
+                  <Code
+                    :validate-field="() => registerFormRef.validateField('account')"
+                    :type="CodeType.Register"
+                    :val="registerForm.account"
+                  />
                 </div>
               </FormItem>
               <FormItem prop="password">
                 <BaseInput
-                    v-model="registerForm.password"
-                    type="password"
-                    name="password"
-                    autocomplete="current-password"
-                    size="large"
-                    :placeholder="`请设置密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
+                  v-model="registerForm.password"
+                  type="password"
+                  name="password"
+                  autocomplete="current-password"
+                  size="large"
+                  :placeholder="`请设置密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
                 />
               </FormItem>
               <FormItem prop="confirmPassword">
                 <BaseInput
-                    v-model="registerForm.confirmPassword"
-                    type="password"
-                    name="password"
-                    autocomplete="new-password"
-                    size="large"
-                    placeholder="请再次输入密码"
+                  v-model="registerForm.confirmPassword"
+                  type="password"
+                  name="password"
+                  autocomplete="new-password"
+                  size="large"
+                  placeholder="请再次输入密码"
                 />
               </FormItem>
             </Form>
 
-            <Notice/>
+            <Notice />
 
-            <BaseButton
-                class="w-full"
-                size="large"
-                :loading="loading"
-                @click="handleRegister"
-            >
-              注册
-            </BaseButton>
-
+            <BaseButton class="w-full" size="large" :loading="loading" @click="handleRegister"> 注册 </BaseButton>
           </div>
 
           <!-- 忘记密码模式 -->
           <div v-else-if="currentMode === 'forgot'">
-            <Header @click="switchMode('login')" title="重置密码"/>
+            <Header @click="switchMode('login')" title="重置密码" />
 
-            <Form
-                ref="forgotFormRef"
-                :rules="forgotFormRules"
-                :model="forgotForm">
+            <Form ref="forgotFormRef" :rules="forgotFormRules" :model="forgotForm">
               <FormItem prop="account">
                 <BaseInput
-                    v-model="forgotForm.account"
-                    type="tel"
-                    name="username"
-                    autocomplete="username"
-                    size="large"
-                    placeholder="请输入手机号/邮箱地址"
+                  v-model="forgotForm.account"
+                  type="tel"
+                  name="username"
+                  autocomplete="username"
+                  size="large"
+                  placeholder="请输入手机号/邮箱地址"
                 />
               </FormItem>
               <FormItem prop="code">
                 <div class="flex gap-2">
                   <BaseInput
-                      v-model="forgotForm.code"
-                      type="code"
-                      size="large"
-                      placeholder="请输入验证码"
-                      :max-length="PHONE_CONFIG.codeLength"
+                    v-model="forgotForm.code"
+                    type="code"
+                    size="large"
+                    placeholder="请输入验证码"
+                    :max-length="PHONE_CONFIG.codeLength"
                   />
-                  <Code :validate-field="() => forgotFormRef.validateField('account')"
-                        :type="CodeType.ResetPwd"
-                        :val="forgotForm.account"/>
+                  <Code
+                    :validate-field="() => forgotFormRef.validateField('account')"
+                    :type="CodeType.ResetPwd"
+                    :val="forgotForm.account"
+                  />
                 </div>
               </FormItem>
               <FormItem prop="newPassword">
                 <BaseInput
-                    v-model="forgotForm.newPassword"
-                    type="password"
-                    name="password"
-                    autocomplete="new-password"
-                    size="large"
-                    :placeholder="`请输入新密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
+                  v-model="forgotForm.newPassword"
+                  type="password"
+                  name="password"
+                  autocomplete="new-password"
+                  size="large"
+                  :placeholder="`请输入新密码（${PASSWORD_CONFIG.minLength}-${PASSWORD_CONFIG.maxLength} 位）`"
                 />
               </FormItem>
               <FormItem prop="confirmPassword">
                 <BaseInput
-                    v-model="forgotForm.confirmPassword"
-                    type="password"
-                    name="password"
-                    autocomplete="new-password"
-                    size="large"
-                    placeholder="请再次输入新密码"
+                  v-model="forgotForm.confirmPassword"
+                  type="password"
+                  name="password"
+                  autocomplete="new-password"
+                  size="large"
+                  placeholder="请再次输入新密码"
                 />
               </FormItem>
             </Form>
 
-            <BaseButton
-                class="w-full mt-2"
-                size="large"
-                :loading="loading"
-                @click="handleForgotPassword"
-            >
+            <BaseButton class="w-full mt-2" size="large" :loading="loading" @click="handleForgotPassword">
               重置密码
             </BaseButton>
           </div>
@@ -622,43 +589,42 @@ function goHome(){
         <div v-if="currentMode === 'login'" class="center flex-col bg-gray-100 rounded-xl px-12">
           <div class="relative w-40 h-40 bg-white rounded-xl overflow-hidden shadow-xl">
             <img
-                v-if="showWechatQR"
-                :src="wechatQRUrl"
-                alt="微信登录二维码"
-                class="w-full h-full"
-                :class="{ 'opacity-30': qrStatus === 'expired' }"
+              v-if="showWechatQR"
+              :src="wechatQRUrl"
+              alt="微信登录二维码"
+              class="w-full h-full"
+              :class="{ 'opacity-30': qrStatus === 'expired' }"
             />
             <!-- 扫描成功蒙层 -->
             <div
-                v-if="qrStatus === 'scanned'"
-                class="absolute left-0 top-0 w-full h-full center flex-col gap-space bg-white"
+              v-if="qrStatus === 'scanned'"
+              class="absolute left-0 top-0 w-full h-full center flex-col gap-space bg-white"
             >
-              <IconFluentCheckmarkCircle20Filled class="color-green text-4xl"/>
+              <IconFluentCheckmarkCircle20Filled class="color-green text-4xl" />
               <div class="text-base text-gray-700 font-medium">扫描成功</div>
               <div class="text-xs text-gray-600">微信中轻触允许即可登录</div>
             </div>
             <!-- 取消登录蒙层 -->
             <div
-                v-if="qrStatus === 'cancelled'"
-                class="absolute left-0 top-0 w-full h-full center flex-col gap-space bg-white"
+              v-if="qrStatus === 'cancelled'"
+              class="absolute left-0 top-0 w-full h-full center flex-col gap-space bg-white"
             >
-              <IconFluentErrorCircle20Regular class="color-red text-4xl"/>
+              <IconFluentErrorCircle20Regular class="color-red text-4xl" />
               <div class="text-base text-gray-700 font-medium">你已取消此次登录</div>
-              <div class="text-xs text-gray-600">你可<span class="color-link" @click="refreshQRCode">再次登录</span>，或关闭窗口
+              <div class="text-xs text-gray-600">
+                你可<span class="color-link" @click="refreshQRCode">再次登录</span>，或关闭窗口
               </div>
             </div>
             <!-- 过期蒙层 -->
             <div
-                v-if=" qrStatus === 'expired'"
-                class="absolute top-0 left-0 right-0 bottom-0 bg-opacity-95 center backdrop-blur-sm"
+              v-if="qrStatus === 'expired'"
+              class="absolute top-0 left-0 right-0 bottom-0 bg-opacity-95 center backdrop-blur-sm"
             >
-              <IconFluentArrowClockwise20Regular
-                  @click="refreshQRCode"
-                  class="cp text-4xl"/>
+              <IconFluentArrowClockwise20Regular @click="refreshQRCode" class="cp text-4xl" />
             </div>
           </div>
           <p class="mt-4 center gap-space">
-            <IconIxWechatLogo class="text-xl color-green"/>
+            <IconIxWechatLogo class="text-xl color-green" />
             <span class="text-sm text-gray-600">微信扫码登录</span>
           </p>
         </div>
@@ -675,12 +641,13 @@ function goHome(){
           </div>
           <div class="flex gap-space justify-end">
             <template v-if="importStep === ImportStep.CONFIRMATION">
-              <PopConfirm :title="[
-            {text:'您的用户数据将以压缩包自动下载到您的电脑中，以便您随时恢复',type:'normal'},
-            {text:'随后网站的用户数据将被删除',type:'redBold'},
-            {text:'是否确认继续？',type:'normal'},
-          ]"
-                          @confirm="forgetData"
+              <PopConfirm
+                :title="[
+                  { text: '您的用户数据将以压缩包自动下载到您的电脑中，以便您随时恢复', type: 'normal' },
+                  { text: '随后网站的用户数据将被删除', type: 'redBold' },
+                  { text: '是否确认继续？', type: 'normal' },
+                ]"
+                @confirm="forgetData"
               >
                 <BaseButton type="info">不同步</BaseButton>
               </PopConfirm>
@@ -692,22 +659,14 @@ function goHome(){
           <div>
             <div class="title text-align-center">正在导入中</div>
             <ol class="pl-4">
-              <li>
-                您的用户数据已自动下载到您的电脑中，以便随时恢复
-              </li>
-              <li>
-                随后将开始数据同步
-              </li>
-              <li>
-                如果您的数据量很大，这将是一个耗时操作
-              </li>
-              <li class="color-red-5 font-bold">
-                请耐心等待，请勿关闭此页面
-              </li>
+              <li>您的用户数据已自动下载到您的电脑中，以便随时恢复</li>
+              <li>随后将开始数据同步</li>
+              <li>如果您的数据量很大，这将是一个耗时操作</li>
+              <li class="color-red-5 font-bold">请耐心等待，请勿关闭此页面</li>
             </ol>
             <div class="flex items-center justify-between gap-2 mt-10">
               <span>当前进度: {{ reason }}</span>
-              <IconEosIconsLoading class="text-xl"/>
+              <IconEosIconsLoading class="text-xl" />
             </div>
           </div>
         </template>
@@ -737,4 +696,5 @@ function goHome(){
       </div>
     </div>
   </div>
-</template>]
+</template>
+]

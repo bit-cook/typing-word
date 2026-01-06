@@ -1,35 +1,71 @@
 import { defineStore } from 'pinia'
-import { Dict, DictId, Word } from "../types/types.ts"
-import { _getStudyProgress, checkAndUpgradeSaveDict, shakeCommonDict } from "@/utils";
-import { shallowReactive } from "vue";
-import { getDefaultDict } from "@/types/func.ts";
+import { Dict, Word } from '../types/types.ts'
+import { _getStudyProgress, checkAndUpgradeSaveDict, shakeCommonDict } from '@/utils'
+import { shallowReactive } from 'vue'
+import { getDefaultDict } from '@/types/func.ts'
 import { get, set } from 'idb-keyval'
-import { AppEnv, SAVE_DICT_KEY } from "@/config/env.ts";
-import { add2MyDict, dictListVersion, myDictList } from "@/apis";
-import Toast from "@/components/base/toast/Toast.ts";
+import { AppEnv, DictId, SAVE_DICT_KEY } from '@/config/env.ts'
+import { add2MyDict, dictListVersion, myDictList } from '@/apis'
+import Toast from '@/components/base/toast/Toast.ts'
 
 export interface BaseState {
-  simpleWords: string[],
+  simpleWords: string[]
   load: boolean
   word: {
-    studyIndex: number,
-    bookList: Dict[],
-  },
+    studyIndex: number
+    bookList: Dict[]
+  }
   article: {
-    bookList: Dict[],
-    studyIndex: number,
-  },
+    bookList: Dict[]
+    studyIndex: number
+  }
   dictListVersion: number
 }
 
 export const getDefaultBaseState = (): BaseState => ({
   simpleWords: [
-    'a', 'an',
-    'i', 'my', 'me', 'you', 'your', 'he', 'his', 'she', 'her', 'it',
-    'what', 'who', 'where', 'how', 'when', 'which',
-    'be', 'am', 'is', 'was', 'are', 'were', 'do', 'did', 'can', 'could', 'will', 'would',
-    'the', 'that', 'this', 'and', 'not', 'no', 'yes',
-    'to', 'of', 'for', 'at', 'in'
+    'a',
+    'an',
+    'i',
+    'my',
+    'me',
+    'you',
+    'your',
+    'he',
+    'his',
+    'she',
+    'her',
+    'it',
+    'what',
+    'who',
+    'where',
+    'how',
+    'when',
+    'which',
+    'be',
+    'am',
+    'is',
+    'was',
+    'are',
+    'were',
+    'do',
+    'did',
+    'can',
+    'could',
+    'will',
+    'would',
+    'the',
+    'that',
+    'this',
+    'and',
+    'not',
+    'no',
+    'yes',
+    'to',
+    'of',
+    'for',
+    'at',
+    'in',
   ],
   load: false,
   word: {
@@ -40,18 +76,18 @@ export const getDefaultBaseState = (): BaseState => ({
         id: DictId.wordKnown,
         en_name: DictId.wordCollect,
         name: '已掌握',
-        description: '已掌握后的单词不会出现在练习中'
+        description: '已掌握后的单词不会出现在练习中',
       }),
     ],
     studyIndex: -1,
   },
   article: {
     bookList: [
-      getDefaultDict({ id: DictId.articleCollect, en_name: DictId.articleCollect, name: '收藏' })
+      getDefaultDict({ id: DictId.articleCollect, en_name: DictId.articleCollect, name: '收藏' }),
     ],
     studyIndex: -1,
   },
-  dictListVersion: 1
+  dictListVersion: 1,
 })
 
 export const useBaseStore = defineStore('base', {
@@ -75,13 +111,24 @@ export const useBaseStore = defineStore('base', {
       return this.known.words.map((v: Word) => v.word.toLowerCase())
     },
     allIgnoreWords() {
-      return this.known.words.map((v: Word) => v.word.toLowerCase()).concat(this.simpleWords.map((v: string) => v.toLowerCase()))
+      return this.known.words
+        .map((v: Word) => v.word.toLowerCase())
+        .concat(this.simpleWords.map((v: string) => v.toLowerCase()))
     },
     sdict(): Dict {
       if (this.word.studyIndex >= 0) {
         return this.word.bookList[this.word.studyIndex] ?? getDefaultDict()
       }
       return getDefaultDict()
+    },
+    groupLength(): number {
+      return Math.ceil(this.sdict.length / this.sdict.perDayStudyNumber)
+    },
+    currentGroup(): number {
+      //当能除尽时，应该加1
+      let s = this.sdict.lastLearnIndex % this.sdict.perDayStudyNumber
+      let d = this.sdict.lastLearnIndex / this.sdict.perDayStudyNumber
+      return Math.floor(s === 0 ?( d + 1) : d)
     },
     currentStudyProgress(): number {
       if (!this.sdict.length) return 0
@@ -90,7 +137,9 @@ export const useBaseStore = defineStore('base', {
     getDictCompleteDate(): number {
       if (!this.sdict.length) return 0
       if (!this.sdict.perDayStudyNumber) return 0
-      return Math.ceil((this.sdict.length - this.sdict.lastLearnIndex) / this.sdict.perDayStudyNumber)
+      return Math.ceil(
+        (this.sdict.length - this.sdict.lastLearnIndex) / this.sdict.perDayStudyNumber
+      )
     },
     sbook(): Dict {
       return this.article.bookList[this.article.studyIndex] ?? {}
@@ -136,7 +185,7 @@ export const useBaseStore = defineStore('base', {
               Object.assign(data, res.data)
             }
           }
-          console.log('data', data)
+          // console.log('data', data)
           this.setState(data)
         } catch (e) {
           console.error('读取本地dict数据失败', e)
@@ -172,6 +221,7 @@ export const useBaseStore = defineStore('base', {
         this.word.bookList[this.word.studyIndex].perDayStudyNumber = val.perDayStudyNumber
         this.word.bookList[this.word.studyIndex].lastLearnIndex = val.lastLearnIndex
         this.word.bookList[this.word.studyIndex].userDictId = val.userDictId
+        this.word.bookList[this.word.studyIndex].complete = val.complete
       } else {
         this.word.bookList.push(getDefaultDict(val))
         this.word.studyIndex = this.word.bookList.length - 1

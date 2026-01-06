@@ -13,7 +13,7 @@ const selectHandler = inject('selectHandler', null);
 
 // 计算当前选项是否被选中
 const isSelected = computed(() => {
-  return selectValue === props.value;
+  return selectValue.value === props.value;
 });
 
 // 点击选项时调用ElSelect提供的方法
@@ -45,20 +45,16 @@ watch(() => props.value, () => {}, { immediate: true });
 
 <style scoped lang="scss">
 .option {
-  display: flex;
-  align-items: center;
-  padding: 0.2rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  @apply flex items-center px-2 py-1 cursor-pointer transition-all duration-300;
 
   &:hover {
-    background-color: var(--color-third);
+    background-color: var(--color-fourth);
   }
 
   &.is-selected {
     color: var(--color-select-bg);
     font-weight: bold;
-    background-color: var(--color-third);
+    background-color: var(--color-fifth);
   }
 
   &.is-disabled {

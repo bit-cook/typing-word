@@ -12,17 +12,7 @@ const settingStore = useSettingStore()
 </script>
 
 <template>
-  <!--        单词练习设置-->
-  <!--        单词练习设置-->
-  <!--        单词练习设置-->
   <div>
-    <!--            <SettingItem title="练习模式">-->
-    <!--              <RadioGroup v-model="settingStore.wordPracticeMode" class="flex-col gap-0!">-->
-    <!--                <Radio :value="WordPracticeMode.System" label="智能模式:自动规划学习、复习、听写、默写"/>-->
-    <!--                <Radio :value="WordPracticeMode.Free" label="自由模式:系统不强制复习与默写"/>-->
-    <!--              </RadioGroup>-->
-    <!--            </SettingItem>-->
-
     <SettingItem title="显示上一个/下一个单词"
                  desc="开启后，练习中会在上方显示上一个/下一个单词"
     >

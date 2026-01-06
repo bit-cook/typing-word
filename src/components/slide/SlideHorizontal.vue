@@ -9,7 +9,8 @@ import {
   slideTouchMove,
   slideTouchStart
 } from "./common";
-import {SlideType} from "@/types/types.ts";
+
+import {SlideType} from "@/config/env";
 
 const props = defineProps({
   index: {

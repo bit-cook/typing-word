@@ -1,69 +1,79 @@
 <script setup lang="ts">
-
-import {Article, Sentence, TranslateEngine} from "@/types/types.ts";
-import BaseButton from "@/components/BaseButton.vue";
-import EditAbleText from "@/components/EditAbleText.vue";
-import {getNetworkTranslate, getSentenceAllText, getSentenceAllTranslateText} from "@/hooks/translate.ts";
-import {genArticleSectionData, splitCNArticle2, splitEnArticle2, usePlaySentenceAudio} from "@/hooks/article.ts";
-import {_nextTick, _parseLRC, cloneDeep, last} from "@/utils";
-import {defineAsyncComponent, watch} from "vue";
-import Empty from "@/components/Empty.vue";
+import type { Article, Sentence } from '@/types/types.ts'
+import BaseButton from '@/components/BaseButton.vue'
+import EditAbleText from '@/components/EditAbleText.vue'
+import { getNetworkTranslate, getSentenceAllText, getSentenceAllTranslateText } from '@/hooks/translate.ts'
+import { genArticleSectionData, splitCNArticle2, splitEnArticle2, usePlaySentenceAudio } from '@/hooks/article.ts'
+import { _nextTick, _parseLRC, cloneDeep, last } from '@/utils'
+import { defineAsyncComponent, watch } from 'vue'
+import Empty from '@/components/Empty.vue'
 import Toast from '@/components/base/toast/Toast.ts'
-import * as Comparison from "string-comparison"
-import BaseIcon from "@/components/BaseIcon.vue";
-import {getDefaultArticle} from "@/types/func.ts";
-import copy from "copy-to-clipboard";
-import {Option, Select} from "@/components/base/select";
-import Tooltip from "@/components/base/Tooltip.vue";
-import InputNumber from "@/components/base/InputNumber.vue";
-import {nanoid} from "nanoid";
-import {update} from "idb-keyval";
-import ArticleAudio from "@/pages/article/components/ArticleAudio.vue";
-import BaseInput from "@/components/base/BaseInput.vue";
-import Textarea from "@/components/base/Textarea.vue";
-import {LOCAL_FILE_KEY} from "@/config/env.ts";
-import PopConfirm from "@/components/PopConfirm.vue";
+import * as Comparison from 'string-comparison'
+import BaseIcon from '@/components/BaseIcon.vue'
+import { getDefaultArticle } from '@/types/func.ts'
+import copy from 'copy-to-clipboard'
+import { Option, Select } from '@/components/base/select'
+import Tooltip from '@/components/base/Tooltip.vue'
+import InputNumber from '@/components/base/InputNumber.vue'
+import { nanoid } from 'nanoid'
+import { update } from 'idb-keyval'
+import ArticleAudio from '@/pages/article/components/ArticleAudio.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
+import Textarea from '@/components/base/Textarea.vue'
+import { LOCAL_FILE_KEY } from '@/config/env.ts'
+import PopConfirm from '@/components/PopConfirm.vue'
+import {TranslateEngine} from "@/types/enum.ts";
 
 const Dialog = defineAsyncComponent(() => import('@/components/dialog/Dialog.vue'))
 
 interface IProps {
-  article?: Article,
+  article?: Article
   type?: 'single' | 'batch'
 }
 
 const props = withDefaults(defineProps<IProps>(), {
   article: () => getDefaultArticle(),
-  type: 'single'
+  type: 'single',
 })
 
 const emit = defineEmits<{
-  save: [val: Article],
+  save: [val: Article]
   saveAndNext: [val: Article]
 }>()
 
 let networkTranslateEngine = $ref('baidu')
 let progress = $ref(0)
 let failCount = $ref(0)
-let textareaRef = $ref<HTMLTextAreaElement>()
+let resultRef = $ref<HTMLDivElement>()
 const TranslateEngineOptions = [
   // {value: 'youdao', label: '有道'},
-  {value: 'baidu', label: '百度'},
+  { value: 'baidu', label: '百度' },
 ]
 
 let editArticle = $ref<Article>(getDefaultArticle())
 
-watch(() => props.article, val => {
-  editArticle = getDefaultArticle(val)
-  progress = 0
-  failCount = 0
-  apply(false)
-}, {immediate: true})
+watch(
+  () => props.article,
+  val => {
+    editArticle = getDefaultArticle(val)
+    progress = 0
+    failCount = 0
+    apply(false)
+    _nextTick(() => {
+      resultRef?.scrollTo(0,0)
+    })
+  },
+  { immediate: true }
+)
 
-watch(() => editArticle.text, (s) => {
-  if (!s.trim()) {
-    editArticle.sections = []
+watch(
+  () => editArticle.text,
+  s => {
+    if (!s.trim()) {
+      editArticle.sections = []
+    }
   }
-})
+)
 
 function apply(isHandle: boolean = true) {
   let text = editArticle.text.trim()
@@ -141,11 +151,13 @@ function save(option: 'save' | 'saveAndNext') {
       return resolve(false)
     }
 
-    editArticle.lrcPosition = editArticle.sections.map(v => {
-      return v.map((w, j) => {
-        return w.audioPosition ?? []
+    editArticle.lrcPosition = editArticle.sections
+      .map(v => {
+        return v.map((w, j) => {
+          return w.audioPosition ?? []
+        })
       })
-    }).flat()
+      .flat()
 
     console.log(editArticle)
 
@@ -161,7 +173,7 @@ function save(option: 'save' | 'saveAndNext') {
 }
 
 //不知道为什么直接用editArticle，取到是空的默认值
-defineExpose({save, getEditArticle: () => cloneDeep(editArticle)})
+defineExpose({ save, getEditArticle: () => cloneDeep(editArticle) })
 
 // 处理音频文件上传
 async function handleAudioChange(e: any) {
@@ -172,7 +184,7 @@ async function handleAudioChange(e: any) {
     file: uploadFile,
   }
   //把文件存到indexDB
-  await update(LOCAL_FILE_KEY, (val) => {
+  await update(LOCAL_FILE_KEY, val => {
     if (val) val.push(data)
     else val = [data]
     return val
@@ -192,32 +204,34 @@ function handleChange(e: any) {
   if (!uploadFile) return
 
   // 读取文件内容
-  let reader = new FileReader();
-  reader.readAsText(uploadFile, 'UTF-8');
+  let reader = new FileReader()
+  reader.readAsText(uploadFile, 'UTF-8')
   reader.onload = function (e) {
-    let lrc: string = e.target.result as string;
+    let lrc: string = e.target.result as string
     console.log(lrc)
     if (lrc.trim()) {
       let lrcList = _parseLRC(lrc)
       console.log('lrcList', lrcList)
       if (lrcList.length) {
-        editArticle.lrcPosition = editArticle.sections.map((v, i) => {
-          return v.map((w, j) => {
-            for (let k = 0; k < lrcList.length; k++) {
-              let s = lrcList[k]
-              let d = Comparison.default.cosine.similarity(w.text, s.text)
-              d = Comparison.default.levenshtein.similarity(w.text, s.text)
-              d = Comparison.default.longestCommonSubsequence.similarity(w.text, s.text)
-              // d = Comparison.default.metricLcs.similarity(w.text, s.text)
-              // console.log(w.text, s.text, d)
-              if (d >= 0.8) {
-                w.audioPosition = [s.start, s.end ?? -1]
-                break
+        editArticle.lrcPosition = editArticle.sections
+          .map((v, i) => {
+            return v.map((w, j) => {
+              for (let k = 0; k < lrcList.length; k++) {
+                let s = lrcList[k]
+                // let d = Comparison.default.cosine.similarity(w.text, s.text)
+                // d = Comparison.default.levenshtein.similarity(w.text, s.text)
+                let d = Comparison.default.longestCommonSubsequence.similarity(w.text, s.text)
+                // d = Comparison.default.metricLcs.similarity(w.text, s.text)
+                // console.log(w.text, s.text, d)
+                if (d >= 0.8) {
+                  w.audioPosition = [s.start, s.end ?? -1]
+                  break
+                }
               }
-            }
-            return w.audioPosition ?? []
+              return w.audioPosition ?? []
+            })
           })
-        }).flat()
+          .flat()
 
         Toast.success('LRC文件解析成功')
       }
@@ -238,12 +252,15 @@ let sentenceAudioRef = $ref<HTMLAudioElement>()
 let audioRef = $ref<HTMLAudioElement>()
 
 let nameListRef = $ref<string[]>([])
-watch(() => showNameDialog, (v) => {
-  if (v) {
-    nameListRef = cloneDeep(Array.isArray(editArticle.nameList) ? editArticle.nameList : [])
-    nameListRef.push('')
+watch(
+  () => showNameDialog,
+  v => {
+    if (v) {
+      nameListRef = cloneDeep(Array.isArray(editArticle.nameList) ? editArticle.nameList : [])
+      nameListRef.push('')
+    }
   }
-})
+)
 
 function addName() {
   nameListRef.push('')
@@ -299,12 +316,12 @@ function recordEnd() {
   editSentence.audioPosition[1] = Number(sentenceAudioRef.currentTime.toFixed(2))
 }
 
-const {playSentenceAudio} = usePlaySentenceAudio()
+const { playSentenceAudio } = usePlaySentenceAudio()
 
 function saveLrcPosition() {
   // showEditAudioDialog = false
   currentSentence.audioPosition = cloneDeep(editSentence.audioPosition)
-  editArticle.lrcPosition = editArticle.sections.map((v, i) => v.map((w, j) => (w.audioPosition ?? []))).flat()
+  editArticle.lrcPosition = editArticle.sections.map((v, i) => v.map((w, j) => w.audioPosition ?? [])).flat()
 }
 
 function jumpAudio(time: number) {
@@ -347,7 +364,6 @@ function minusStartTime(val: Sentence) {
   if (val.audioPosition[0] <= 0) return
   val.audioPosition[0] = Number((val.audioPosition[0] - 0.3).toFixed(2))
 }
-
 </script>
 
 <template>
@@ -358,7 +374,7 @@ function minusStartTime(val: Sentence) {
         <div class="shrink-0">标题：</div>
         <BaseInput
           v-model="editArticle.title"
-          :disabled="![100,0].includes(progress)"
+          :disabled="![100, 0].includes(progress)"
           type="text"
           placeholder="请填写原文标题"
         />
@@ -368,29 +384,33 @@ function minusStartTime(val: Sentence) {
         <Tooltip title="配置人名之后，在练习时自动忽略(可选，默认开启)">
           <div @click="showNameDialog = true" class="center gap-1 cp">
             <span>人名配置</span>
-            <IconFluentSettings20Regular/>
+            <IconFluentSettings20Regular />
           </div>
         </Tooltip>
       </div>
-      <Textarea v-model="editArticle.text"
-                class="h-full"
-                :disabled="![100,0].includes(progress)"
-                placeholder="请复制原文"
-                :autosize="false"/>
+      <Textarea
+        v-model="editArticle.text"
+        class="h-full"
+        :disabled="![100, 0].includes(progress)"
+        placeholder="请复制原文"
+        :autosize="false"
+      />
       <div class="justify-end items-center flex">
         <Tooltip>
-          <IconFluentQuestionCircle20Regular class="mr-3" width="20"/>
+          <IconFluentQuestionCircle20Regular class="mr-3" width="20" />
           <template #reference>
             <div>
               <div class="mb-2">使用方法</div>
               <ol class="py-0 pl-5 my-0 text-base color-main">
                 <li>复制原文，然后分句</li>
-                <li>点击 <span class="color-red font-bold">分句</span> 按钮进行自动分句<span
-                  class="color-red font-bold"> 或</span> 手动编辑分句
+                <li>
+                  点击 <span class="color-red font-bold">分句</span> 按钮进行自动分句<span class="color-red font-bold">
+                    或</span
+                  >
+                  手动编辑分句
                 </li>
                 <li>分句规则：一行一句，段落间空一行</li>
-                <li>修改完成后点击 <span class="color-red font-bold">应用</span> 按钮同步到左侧结果栏
-                </li>
+                <li>修改完成后点击 <span class="color-red font-bold">应用</span> 按钮同步到左侧结果栏</li>
               </ol>
             </div>
           </template>
@@ -405,47 +425,47 @@ function minusStartTime(val: Sentence) {
         <div class="shrink-0">标题：</div>
         <BaseInput
           v-model="editArticle.titleTranslate"
-          :disabled="![100,0].includes(progress)"
+          :disabled="![100, 0].includes(progress)"
           type="text"
           placeholder="请填写翻译标题"
         />
       </div>
       <div class="">正文：<span class="text-sm color-gray">一行一句，段落间空一行</span></div>
-      <Textarea v-model="editArticle.textTranslate"
-                class="h-full"
-                :disabled="![100,0].includes(progress)"
-                placeholder="请填写翻译"
-                :autosize="false"/>
+      <Textarea
+        v-model="editArticle.textTranslate"
+        class="h-full"
+        :disabled="![100, 0].includes(progress)"
+        placeholder="请填写翻译"
+        :autosize="false"
+      />
       <div class="justify-between items-center flex">
         <div class="flex gap-space items-center w-50">
-          <BaseButton @click="startNetworkTranslate"
-                      :loading="progress!==0 && progress !== 100">翻译
-          </BaseButton>
-          <Select v-model="networkTranslateEngine"
-          >
-            <Option
-              v-for="item in TranslateEngineOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+          <BaseButton @click="startNetworkTranslate" :loading="progress !== 0 && progress !== 100">翻译 </BaseButton>
+          <Select v-model="networkTranslateEngine">
+            <Option v-for="item in TranslateEngineOptions" :key="item.value" :label="item.label" :value="item.value" />
           </Select>
           {{ progress }}%
         </div>
         <div class="flex items-center">
           <Tooltip>
-            <IconFluentQuestionCircle20Regular class="mr-3" width="20"/>
+            <IconFluentQuestionCircle20Regular class="mr-3" width="20" />
             <template #reference>
               <div>
                 <div class="mb-2">使用方法</div>
                 <ol class="py-0 pl-5 my-0 text-base color-black/60">
                   <li>复制译文，如果没有请点击 <span class="color-red font-bold">翻译</span> 按钮</li>
-                  <li>点击 <span class="color-red font-bold">分句</span> 按钮进行自动分句<span
-                    class="color-red font-bold"> 或</span>
+                  <li>
+                    点击 <span class="color-red font-bold">分句</span> 按钮进行自动分句<span
+                      class="color-red font-bold"
+                    >
+                      或</span
+                    >
                     手动编辑分句
                   </li>
                   <li>分句规则：一行一句，段落间空一行</li>
-                  <li>修改完成后点击 <span class="color-red font-bold">应用</span> 按钮同步到左侧结果栏
+                  <li>
+                    修改完成后点击
+                    <span class="color-red font-bold">应用</span> 按钮同步到左侧结果栏
                   </li>
                 </ol>
               </div>
@@ -460,38 +480,40 @@ function minusStartTime(val: Sentence) {
       <div class="flex gap-2">
         <div class="title">结果</div>
         <div class="flex gap-2 flex-1 justify-end">
-          <ArticleAudio ref="audioRef" :article="editArticle" :autoplay="false"/>
+          <ArticleAudio ref="audioRef" :article="editArticle" :autoplay="false" />
         </div>
       </div>
       <template v-if="editArticle?.sections?.length">
         <div class="flex-1 overflow-auto flex flex-col">
           <div class="flex justify-between bg-black/10 py-2 rounded-lt-md rounded-rt-md">
-            <div class="center flex-[7]">内容：
-              <span class="text-sm color-black/70">均可编辑，编辑后点击应用按钮会自动同步</span></div>
+            <div class="center flex-[7]">
+              内容(
+              <span class="text-sm color-gray-500">均可编辑，编辑后点击应用按钮会自动同步</span>)
+            </div>
             <div>|</div>
             <div class="center flex-[3] gap-2">
               <span>音频</span>
               <BaseIcon title="音频管理" @click="showAudioDialog = true">
-                <IconIconParkOutlineAddMusic/>
+                <IconIconParkOutlineAddMusic />
               </BaseIcon>
             </div>
           </div>
-          <div class="article-translate">
-            <div class="section  rounded-md " v-for="(item,indexI) in editArticle.sections">
+          <div class="article-translate" ref="resultRef">
+            <div class="section rounded-md" v-for="(item, indexI) in editArticle.sections">
               <div class="section-title text-lg font-bold">第{{ indexI + 1 }}段</div>
-              <div class="sentence" v-for="(sentence,indexJ) in item">
+              <div class="sentence" v-for="(sentence, indexJ) in item">
                 <div class="flex-[7]">
                   <EditAbleText
-                    :disabled="![100,0].includes(progress)"
+                    :disabled="![100, 0].includes(progress)"
                     :value="sentence.text"
-                    @save="(e:string) => saveSentenceText(sentence,e)"
+                    @save="(e: string) => saveSentenceText(sentence, e)"
                   />
                   <EditAbleText
                     class="text-lg!"
                     v-if="sentence.translate"
-                    :disabled="![100,0].includes(progress)"
+                    :disabled="![100, 0].includes(progress)"
                     :value="sentence.translate"
-                    @save="(e:string) => saveSentenceTranslate(sentence,e)"
+                    @save="(e: string) => saveSentenceTranslate(sentence, e)"
                   />
                 </div>
                 <div class="flex-[2] flex justify-end gap-1 items-center">
@@ -500,45 +522,41 @@ function minusStartTime(val: Sentence) {
                       <div>{{ sentence.audioPosition?.[0] ?? 0 }}s</div>
                       <div class="flex gap-1">
                         <BaseIcon
-                          @click="setStartTime(sentence,indexI,indexJ)"
-                          :title="indexI === 0 && indexJ === 0 ?'设置开始时间':'使用前一句的结束时间'"
+                          @click="setStartTime(sentence, indexI, indexJ)"
+                          :title="indexI === 0 && indexJ === 0 ? '设置开始时间' : '使用前一句的结束时间'"
                         >
-                          <IconFluentMyLocation20Regular v-if="indexI === 0 && indexJ === 0"/>
-                          <IconFluentPaddingLeft20Regular v-else/>
+                          <IconFluentMyLocation20Regular v-if="indexI === 0 && indexJ === 0" />
+                          <IconFluentPaddingLeft20Regular v-else />
                         </BaseIcon>
-                        <BaseIcon
-                          @click="minusStartTime(sentence)"
-                          title="减 0.3 秒"
-                        >
-                          -.3s
-                        </BaseIcon>
+                        <BaseIcon @click="minusStartTime(sentence)" title="减 0.3 秒"> -.3s </BaseIcon>
                       </div>
                     </div>
                     <div>-</div>
                     <div class="flex flex-col items-center justify-center">
                       <div v-if="sentence.audioPosition?.[1] !== -1">{{ sentence.audioPosition?.[1] ?? 0 }}s</div>
-                      <div v-else> 结束</div>
-                      <BaseIcon
-                        @click="setEndTime(sentence,indexI,indexJ)"
-                        title="设置结束时间"
-                      >
-                        <IconFluentMyLocation20Regular/>
+                      <div v-else>结束</div>
+                      <BaseIcon @click="setEndTime(sentence, indexI, indexJ)" title="设置结束时间">
+                        <IconFluentMyLocation20Regular />
                       </BaseIcon>
                     </div>
                   </div>
                   <div class="flex flex-col">
-                    <BaseIcon :icon="sentence.audioPosition?.length ? 'basil:edit-outline' : 'basil:add-outline'"
-                              title="编辑音频对齐"
-                              @click="handleShowEditAudioDialog(sentence,indexI,indexJ)">
+                    <BaseIcon
+                      :icon="sentence.audioPosition?.length ? 'basil:edit-outline' : 'basil:add-outline'"
+                      title="编辑音频对齐"
+                      @click="handleShowEditAudioDialog(sentence, indexI, indexJ)"
+                    >
                       <IconFluentSpeakerEdit20Regular
-                        v-if="sentence.audioPosition?.length && sentence.audioPosition[1]"/>
-                      <IconFluentAddSquare20Regular v-else/>
+                        v-if="sentence.audioPosition?.length && sentence.audioPosition[1]"
+                      />
+                      <IconFluentAddSquare20Regular v-else />
                     </BaseIcon>
                     <BaseIcon
                       title="播放"
                       v-if="sentence.audioPosition?.length"
-                      @click="playSentenceAudio(sentence,audioRef)">
-                      <IconFluentPlay20Regular/>
+                      @click="playSentenceAudio(sentence, audioRef)"
+                    >
+                      <IconFluentPlay20Regular />
                     </BaseIcon>
                   </div>
                 </div>
@@ -550,11 +568,11 @@ function minusStartTime(val: Sentence) {
           <div class="status">
             <span>状态：</span>
             <div class="warning" v-if="failCount">
-              <IconFluentShieldQuestion20Regular/>
+              <IconFluentShieldQuestion20Regular />
               共有{{ failCount }}句没有翻译！
             </div>
             <div class="success" v-else>
-              <IconFluentCheckmarkCircle16Regular/>
+              <IconFluentCheckmarkCircle16Regular />
               翻译完成！
             </div>
           </div>
@@ -564,23 +582,22 @@ function minusStartTime(val: Sentence) {
           </div>
         </div>
       </template>
-      <Empty v-else text="没有译文对照~"/>
+      <Empty v-else text="没有译文对照~" />
     </div>
-    <Dialog title="调整音频时间轴"
-            v-model="showEditAudioDialog"
-            :footer="true"
-            @close="showEditAudioDialog = false"
-            @ok="saveLrcPosition"
+    <Dialog
+      title="调整音频时间轴"
+      v-model="showEditAudioDialog"
+      :footer="true"
+      @close="showEditAudioDialog = false"
+      @ok="saveLrcPosition"
     >
       <div class="p-4 pt-0 color-main w-150 flex flex-col gap-2">
         <div class="">
-          教程：点击音频播放按钮，当播放到句子开始时，点击开始时间的 <span class="color-red">记录</span>
-          按钮；当播放到句子结束时，点击结束时间的 <span class="color-red">记录</span> 按钮，最后再试听是否正确
+          教程：点击音频播放按钮，当播放到句子开始时，点击开始时间的
+          <span class="color-red">记录</span> 按钮；当播放到句子结束时，点击结束时间的
+          <span class="color-red">记录</span> 按钮，最后再试听是否正确
         </div>
-        <ArticleAudio ref="sentenceAudioRef"
-                      :article="editArticle"
-                      :autoplay="false"
-                      class="w-full"/>
+        <ArticleAudio ref="sentenceAudioRef" :article="editArticle" :autoplay="false" class="w-full" />
         <div class="flex items-center gap-2 justify-between mb-2" v-if="editSentence.audioPosition?.length">
           <div>{{ editSentence.text }}</div>
           <div class="flex items-center gap-2 shrink-0">
@@ -589,10 +606,8 @@ function minusStartTime(val: Sentence) {
               <span v-if="editSentence.audioPosition?.[1] !== -1"> - {{ editSentence.audioPosition?.[1] }}s</span>
               <span v-else> - 结束</span>
             </div>
-            <BaseIcon
-              title="播放"
-              @click="playSentenceAudio(editSentence,sentenceAudioRef)">
-              <IconFluentPlay20Regular/>
+            <BaseIcon title="播放" @click="playSentenceAudio(editSentence, sentenceAudioRef)">
+              <IconFluentPlay20Regular />
             </BaseIcon>
           </div>
         </div>
@@ -601,19 +616,19 @@ function minusStartTime(val: Sentence) {
             <div>开始时间：</div>
             <div class="flex justify-between flex-1">
               <div class="flex items-center gap-2">
-                <InputNumber v-model="editSentence.audioPosition[0]" :precision="2" :step="0.1"/>
+                <InputNumber v-model="editSentence.audioPosition[0]" :precision="2" :step="0.1" />
                 <BaseIcon
                   @click="jumpAudio(editSentence.audioPosition[0])"
-                  :title='`跳转至${editSentence.audioPosition[0]}秒`'
+                  :title="`跳转至${editSentence.audioPosition[0]}秒`"
                 >
-                  <IconFluentMyLocation20Regular/>
+                  <IconFluentMyLocation20Regular />
                 </BaseIcon>
                 <BaseIcon
                   v-if="preSentence"
                   @click="setPreEndTimeToCurrentStartTime"
-                  :title="`使用前一句的结束时间：${preSentence?.audioPosition?.[1]||0}秒`"
+                  :title="`使用前一句的结束时间：${preSentence?.audioPosition?.[1] || 0}秒`"
                 >
-                  <IconFluentPaddingLeft20Regular/>
+                  <IconFluentPaddingLeft20Regular />
                 </BaseIcon>
                 <BaseIcon
                   @click="editSentence.audioPosition[0] = Number((editSentence.audioPosition[0] - 0.3).toFixed(2))"
@@ -635,7 +650,7 @@ function minusStartTime(val: Sentence) {
             <div>结束时间：</div>
             <div class="flex justify-between flex-1">
               <div class="flex items-center gap-2">
-                <InputNumber v-model="editSentence.audioPosition[1]" :precision="2" :step="0.1"/>
+                <InputNumber v-model="editSentence.audioPosition[1]" :precision="2" :step="0.1" />
                 <span>或</span>
                 <BaseButton size="small" @click="editSentence.audioPosition[1] = -1">结束</BaseButton>
               </div>
@@ -646,41 +661,36 @@ function minusStartTime(val: Sentence) {
       </div>
     </Dialog>
 
-    <Dialog title="音频管理"
-            v-model="showAudioDialog"
-            :footer="false"
-            @close="showAudioDialog = false"
-    >
+    <Dialog title="音频管理" v-model="showAudioDialog" :footer="false" @close="showAudioDialog = false">
       <div class="p-4 pt-0 color-main w-150 flex flex-col gap-2">
         <div class="">
           1、上传的文件保存在本地电脑上，更换电脑数据将丢失，请及时备份数据
-          <br>
+          <br />
           2、LRC 文件用于解析句子对应音频的位置，不一定准确，后续可自行修改
         </div>
         <!--        <ArticleAudio ref="sentenceAudioRef" :article="editArticle" class="w-full"/>-->
         <div class="upload relative">
           <BaseButton>上传音频</BaseButton>
-          <input type="file"
-                 accept="audio/*"
-                 @change="handleAudioChange"
-                 class="w-full h-full absolute left-0 top-0 opacity-0"/>
+          <input
+            type="file"
+            accept="audio/*"
+            @change="handleAudioChange"
+            class="w-full h-full absolute left-0 top-0 opacity-0"
+          />
         </div>
         <div class="upload relative">
           <BaseButton>上传 LRC 文件</BaseButton>
-          <input type="file"
-                 accept=".lrc"
-                 @change="handleChange"
-                 class="w-full h-full absolute left-0 top-0 opacity-0"/>
+          <input
+            type="file"
+            accept=".lrc"
+            @change="handleChange"
+            class="w-full h-full absolute left-0 top-0 opacity-0"
+          />
         </div>
       </div>
     </Dialog>
 
-    <Dialog title="人名管理"
-            v-model="showNameDialog"
-            :footer="true"
-            @close="showNameDialog = false"
-            @ok="saveNameList"
-    >
+    <Dialog title="人名管理" v-model="showNameDialog" :footer="true" @close="showNameDialog = false" @ok="saveNameList">
       <div class="p-4 pt-0 color-main w-150 flex flex-col gap-3">
         <div class="flex justify-between items-center">
           <div class="text-base">配置需要忽略的人名，练习时自动忽略这些名称(可选，默认开启)</div>
@@ -688,17 +698,18 @@ function minusStartTime(val: Sentence) {
         </div>
 
         <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-2" v-for="(name,i) in nameListRef" :key="i">
-            <BaseInput v-model="nameListRef[i]"
-                       placeholder="输入名称"
-                       size="large"
-                       :autofocus="i===nameListRef.length-1"/>
+          <div class="flex items-center gap-2" v-for="(name, i) in nameListRef" :key="i">
+            <BaseInput
+              v-model="nameListRef[i]"
+              placeholder="输入名称"
+              size="large"
+              :autofocus="i === nameListRef.length - 1"
+            />
             <BaseButton type="info" @click="removeName(i)">删除</BaseButton>
           </div>
         </div>
       </div>
     </Dialog>
-
   </div>
 </template>
 
@@ -782,7 +793,7 @@ function minusStartTime(val: Sentence) {
       display: flex;
       align-items: center;
       font-size: 1.2rem;
-      color: #67C23A;
+      color: #67c23a;
     }
   }
 }
@@ -807,7 +818,8 @@ function minusStartTime(val: Sentence) {
       }
 
       // 表单元素优化
-      .base-input, .base-textarea {
+      .base-input,
+      .base-textarea {
         width: 100%;
         font-size: 16px; // 防止iOS自动缩放
       }
@@ -872,7 +884,8 @@ function minusStartTime(val: Sentence) {
           font-size: 0.9rem;
         }
 
-        .warning, .success {
+        .warning,
+        .success {
           font-size: 1rem;
         }
       }

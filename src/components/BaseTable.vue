@@ -1,6 +1,5 @@
 <script setup lang="tsx">
 import { nextTick, onMounted, useSlots } from 'vue'
-import { Sort } from '@/types/types.ts'
 import MiniDialog from '@/components/dialog/MiniDialog.vue'
 import BaseIcon from '@/components/BaseIcon.vue'
 import BaseButton from '@/components/BaseButton.vue'
@@ -13,11 +12,13 @@ import DeleteIcon from '@/components/icon/DeleteIcon.vue'
 import Dialog from '@/components/dialog/Dialog.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import { Host } from '@/config/env.ts'
+import { Sort } from '@/types/enum.ts'
 
 const props = withDefaults(
   defineProps<{
     loading?: boolean
     showToolbar?: boolean
+    showCheckbox?: boolean
     showPagination?: boolean
     exportLoading?: boolean
     importLoading?: boolean
@@ -26,6 +27,7 @@ const props = withDefaults(
   }>(),
   {
     loading: true,
+    showCheckbox: false,
     showToolbar: true,
     showPagination: true,
     exportLoading: false,
@@ -48,6 +50,7 @@ const emit = defineEmits<{
 }>()
 
 let listRef: any = $ref()
+let showCheckbox = $ref(false)
 
 function scrollToBottom() {
   nextTick(() => {
@@ -167,11 +170,7 @@ onMounted(async () => {
 
 defineRender(() => {
   const d = item => (
-    <Checkbox
-      modelValue={selectIds.includes(item.id)}
-      onChange={() => toggleSelect(item)}
-      size="large"
-    />
+    <Checkbox modelValue={selectIds.includes(item.id)} onChange={() => toggleSelect(item)} size="large" />
   )
 
   return (
@@ -194,27 +193,33 @@ defineRender(() => {
               <BaseButton onClick={cancelSearch}>取消</BaseButton>
             </div>
           ) : (
-            <div class="flex justify-between">
-              <div class="flex gap-2 items-center">
-                <Checkbox
-                  disabled={!params.list.length}
-                  onChange={() => toggleSelectAll()}
-                  modelValue={selectAll}
-                  size="large"
-                />
-                <span>
+            <div class="flex justify-between items-center">
+              {showCheckbox ? (
+                <div class="flex gap-2 items-center">
+                  <Checkbox
+                    disabled={!params.list.length}
+                    onChange={() => toggleSelectAll()}
+                    modelValue={selectAll}
+                    size="large"
+                  />
+                  <span>
                   {selectIds.length} / {params.total}
                 </span>
-              </div>
+                </div>
+              ) : <div>{params.total}条</div>}
+
 
               <div class="flex gap-2 relative">
-                {selectIds.length ? (
+                {selectIds.length && showCheckbox ? (
                   <PopConfirm title="确认删除所有选中数据？" onConfirm={handleBatchDel}>
-                    <BaseIcon class="del" title="删除">
-                      <DeleteIcon />
-                    </BaseIcon>
+                    <BaseButton type="info">确认</BaseButton>
                   </PopConfirm>
                 ) : null}
+
+                <BaseIcon onClick={() => (showCheckbox = !showCheckbox)} title="批量删除">
+                  <DeleteIcon />
+                </BaseIcon>
+
                 <BaseIcon onClick={() => (showImportDialog = true)} title="导入">
                   <IconSystemUiconsImport />
                 </BaseIcon>
@@ -265,7 +270,7 @@ defineRender(() => {
               return (
                 <div class="list-item-wrapper" key={item.word}>
                   {s.default({
-                    checkbox: d,
+                    checkbox: showCheckbox ? d : () => void 0,
                     item,
                     index: params.pageSize * (params.pageNo - 1) + index + 1,
                   })}
@@ -297,11 +302,7 @@ defineRender(() => {
         </div>
       )}
 
-      <Dialog
-        modelValue={showImportDialog}
-        onUpdate:modelValue={closeImportDialog}
-        title="导入教程"
-      >
+      <Dialog modelValue={showImportDialog} onUpdate:modelValue={closeImportDialog} title="导入教程">
         <div className="w-100 p-4 pt-0">
           <div>请按照模板的格式来填写数据</div>
           <div class="color-red">单词项为必填，其他项可不填</div>

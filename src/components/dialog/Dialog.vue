@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from "vue";
-import Tooltip from "@/components/base/Tooltip.vue";
-import { useEventListener } from "@/hooks/event.ts";
+import { onMounted, onUnmounted, watch } from 'vue'
+import Tooltip from '@/components/base/Tooltip.vue'
+import { useEventListener } from '@/hooks/event.ts'
 
-import BaseButton from "@/components/BaseButton.vue";
-import { useRuntimeStore } from "@/stores/runtime.ts";
+import BaseButton from '@/components/BaseButton.vue'
+import { useRuntimeStore } from '@/stores/runtime.ts'
 
 export interface ModalProps {
-  modelValue?: boolean,
-  showClose?: boolean,
-  title?: string,
-  content?: string,
-  fullScreen?: boolean;
+  modelValue?: boolean
+  showClose?: boolean
+  title?: string
+  content?: string
+  fullScreen?: boolean
   padding?: boolean
   footer?: boolean
   header?: boolean
   confirmButtonText?: string
-  cancelButtonText?: string,
-  keyboard?: boolean,
-  closeOnClickBg?: boolean,
+  cancelButtonText?: string
+  keyboard?: boolean
+  closeOnClickBg?: boolean
   confirm?: any
   beforeClose?: any
 }
@@ -32,15 +32,10 @@ const props = withDefaults(defineProps<ModalProps>(), {
   header: true,
   confirmButtonText: '确认',
   cancelButtonText: '取消',
-  keyboard: true
+  keyboard: true,
 })
 
-const emit = defineEmits([
-  'update:modelValue',
-  'close',
-  'ok',
-  'cancel',
-])
+const emit = defineEmits(['update:modelValue', 'close', 'ok', 'cancel'])
 
 let confirmButtonLoading = $ref(false)
 let zIndex = $ref(999)
@@ -56,21 +51,21 @@ async function close() {
     return
   }
   if (props.beforeClose) {
-    if (!await props.beforeClose()) {
+    if (!(await props.beforeClose())) {
       return
     }
   }
   //记录停留时间，避免时间太短，弹框闪烁
-  let stayTime = Date.now() - openTime;
-  let closeTime = 300;
+  let stayTime = Date.now() - openTime
+  let closeTime = 300
   if (stayTime < 500) {
-    closeTime += 500 - stayTime;
+    closeTime += 500 - stayTime
   }
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(() => {
-      maskRef?.classList.toggle('bounce-out');
-      modalRef?.classList.toggle('bounce-out');
-    }, 500 - stayTime);
+      maskRef?.classList.toggle('bounce-out')
+      modalRef?.classList.toggle('bounce-out')
+    }, 500 - stayTime)
 
     setTimeout(() => {
       emit('update:modelValue', false)
@@ -82,20 +77,22 @@ async function close() {
         runtimeStore.modalList.splice(rIndex, 1)
       }
     }, closeTime)
-  });
+  })
 }
 
-watch(() => props.modelValue, n => {
-  // console.log('n', n)
-  if (n) {
-    id = Date.now()
-    runtimeStore.modalList.push({ id, close })
-    zIndex = 999 + runtimeStore.modalList.length
-    visible = true
-  } else {
-    close()
+watch(
+  () => props.modelValue,
+  n => {
+    if (n) {
+      id = Date.now()
+      runtimeStore.modalList.push({ id, close })
+      zIndex = 999 + runtimeStore.modalList.length
+      visible = true
+    } else {
+      close()
+    }
   }
-})
+)
 
 onMounted(() => {
   if (props.modelValue === undefined) {
@@ -139,32 +136,30 @@ async function cancel() {
   emit('cancel')
   await close()
 }
-
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="modal-root" :style="{'z-index': zIndex}" v-if="visible">
-      <div class="modal-mask"
-           ref="maskRef"
-           v-if="!fullScreen"
-           @click.stop="closeOnClickBg && close()"></div>
-      <div class="modal"
-           ref="modalRef"
-           :class="[
-                fullScreen?'full':'window'
-            ]"
-      >
+    <div class="modal-root" :style="{ 'z-index': zIndex }" v-if="visible">
+      <div
+        class="modal-mask"
+        ref="maskRef"
+        v-if="!fullScreen"
+        @click.stop="closeOnClickBg && close()"
+      ></div>
+      <div class="modal" ref="modalRef" :class="[fullScreen ? 'full' : 'window']">
         <Tooltip title="关闭">
-          <IconFluentDismiss20Regular @click="close"
-                                      v-if="showClose"
-                                      class="close cursor-pointer"
-                                      width="24"/>
+          <IconFluentDismiss20Regular
+            @click="close"
+            v-if="showClose"
+            class="close cursor-pointer"
+            width="24"
+          />
         </Tooltip>
         <div class="modal-header" v-if="header">
           <div class="title">{{ props.title }}</div>
         </div>
-        <div class="modal-body" :class="{padding}">
+        <div class="modal-body" :class="{ padding }">
           <slot></slot>
           <div v-if="content" class="content max-h-60vh">{{ content }}</div>
         </div>
@@ -174,10 +169,8 @@ async function cancel() {
           </div>
           <div class="right">
             <BaseButton type="info" @click="cancel">{{ cancelButtonText }}</BaseButton>
-            <BaseButton
-                id="dialog-ok"
-                :loading="confirmButtonLoading"
-                @click="ok">{{ confirmButtonText }}
+            <BaseButton id="dialog-ok" :loading="confirmButtonLoading" @click="ok"
+              >{{ confirmButtonText }}
             </BaseButton>
           </div>
         </div>
@@ -187,12 +180,7 @@ async function cancel() {
 </template>
 
 <style scoped lang="scss">
-
-
-$modal-mask-bg: rgba(#000, .6);
-$radius: .5rem;
 $time: 0.3s;
-$header-height: 4rem;
 
 @keyframes bounce-in {
   0% {
@@ -224,38 +212,21 @@ $header-height: 4rem;
 }
 
 .modal-root {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  @apply fixed top-0 left-0 z-999 flex items-center justify-center w-full h-full overflow-hidden;
 
   .modal-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: $modal-mask-bg;
-    transition: background 0.3s;
+    @apply fixed top-0 left-0 w-full h-full transition-all duration-300;
+    background: rgba(#000, 0.6);
     animation: fade-in $time;
 
     &.bounce-out {
-      background: transparent;
+      @apply bg-transparent;
     }
   }
 
   .window {
-    //width: 75vw;
-    //height: 70vh;
-    box-shadow: var(--shadow);
-    border-radius: $radius;
     animation: bounce-in $time ease-out;
+    @apply shadow-lg rounded-lg;
 
     &.bounce-out {
       opacity: 0;
@@ -263,8 +234,7 @@ $header-height: 4rem;
   }
 
   .full {
-    width: 100vw;
-    height: 100vh;
+    @apply w-full h-full;
     animation: bounce-in-full $time ease-out;
 
     &.bounce-out {
@@ -274,61 +244,35 @@ $header-height: 4rem;
   }
 
   .modal {
-    position: relative;
-    background: var(--color-second);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform $time, opacity $time;
+    @apply relative overflow-hidden flex flex-col transition-all duration-300;
+    background: var(--color-card-bg);
 
     .close {
-      position: absolute;
-      right: 1.2rem;
-      top: 1.2rem;
-      z-index: 999;
+      @apply absolute right-1.2rem top-1.2rem z-999;
     }
 
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--modal-padding);
-      padding-bottom: 0;
-      border-radius: $radius $radius 0 0;
+      @apply flex justify-between items-center p-5 pb-0 rounded-t-lg;
 
       .title {
-        color: var(--color-font-1);
-        font-weight: bold;
-        font-size: 1.3rem;
-        line-height: 1.8rem;
+        @apply font-bold text-xl;
       }
     }
 
     .modal-body {
-      box-sizing: border-box;
-      color: var(--color-main-text);
-      font-weight: 400;
-      font-size: 1.1rem;
-      line-height: 1.7rem;
-      width: 100%;
-      flex: 1;
-      overflow: hidden;
-      display: flex;
+      @apply box-border text-main-text font-normal text-base leading-6 w-full flex-1 overflow-hidden flex;
 
       &.padding {
-        padding: .2rem var(--modal-padding);
+        @apply p-1 px-5;
       }
 
       .content {
-        width: 25rem;
-        padding: .2rem 1.6rem 1.6rem;
+        @apply w-64 p-2 px-4 pb-4;
       }
     }
 
     .modal-footer {
-      display: flex;
-      justify-content: space-between;
-      padding: var(--modal-padding);
+      @apply flex justify-between p-5;
     }
   }
 }
