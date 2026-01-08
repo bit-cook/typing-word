@@ -13,7 +13,8 @@ const common = {
 const map = {
   DEV: {
     API: 'http://localhost/',
-    RESOURCE_URL: 'https://dicts.2study.top/',
+    // RESOURCE_URL: 'https://dicts.2study.top/',
+    RESOURCE_URL: '/',
   },
 }
 
