@@ -30,13 +30,18 @@ interface Category {
   subcategories?: Subcategory[]
 }
 
-// 资源分类
 const categories = ref<Category[]>([
   {
     id: 'new-concept',
     name: '新概念英语',
     description: '经典英语教材，适合系统学习',
     resources: [
+      {
+        name: '新概念资源合集',
+        description: '',
+        difficulty: '包含后面所有的内容',
+        link: 'https://pan.quark.cn/s/6b12da160020',
+      },
       {
         name: '新概念英语第一册',
         description: '适合英语初学者',
@@ -79,12 +84,6 @@ const categories = ref<Category[]>([
         difficulty: '',
         link: 'https://pan.quark.cn/s/07e25ee6de9f',
       },
-      {
-        name: '新概念资源合集',
-        description: '',
-        difficulty: '包含前面所有的内容',
-        link: 'https://pan.quark.cn/s/6b12da160020',
-      },
     ],
   },
   {
@@ -92,6 +91,12 @@ const categories = ref<Category[]>([
     name: '电视/电影',
     description: '一些不错的美/英剧，可练听力和口语',
     resources: [
+      {
+        name: '电视/电影资源合集',
+        difficulty: '包含后面所有的内容',
+        link: 'https://pan.quark.cn/s/84ecb30b700b', //159
+        // link: 'https://pan.quark.cn/s/e9b62b79c48c',
+      },
       {
         name: '老友记',
         description: '',
@@ -127,12 +132,6 @@ const categories = ref<Category[]>([
         description: '',
         difficulty: '纸牌屋',
         link: 'https://pan.quark.cn/s/5ba146c46180',
-      },
-      {
-        name: '电视/电影资源合集',
-        difficulty: '包含前面所有的内容',
-        link: 'https://pan.quark.cn/s/84ecb30b700b', //159
-        // link: 'https://pan.quark.cn/s/e9b62b79c48c',
       },
     ],
   },
@@ -245,8 +244,8 @@ const categories = ref<Category[]>([
       },
     ],
   },
-])
-
+])  
+ 
 // 当前选中的分类
 const selectedCategory = ref('all')
 
