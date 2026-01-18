@@ -171,7 +171,7 @@ let showPracticeWordListDialog = $ref(false)
 async function goDictDetail(val: DictResource) {
   if (!val.id) return nav('dict-list')
   runtimeStore.editDict = getDefaultDict(val)
-  nav('dict-detail', {})
+  nav('/dict', {})
 }
 
 let isManageDict = $ref(false)
@@ -513,7 +513,7 @@ const systemPracticeText = $computed(() => {
           >
             {{ isManageDict ? '取消' : '管理词典' }}
           </div>
-          <div class="color-link cursor-pointer" @click="nav('dict-detail', { isAdd: true })">创建个人词典</div>
+          <div class="color-link cursor-pointer" @click="nav('/dict', { isAdd: true })">创建个人词典</div>
         </div>
       </div>
       <div class="flex gap-4 flex-wrap mt-4">

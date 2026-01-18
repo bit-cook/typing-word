@@ -36,6 +36,7 @@ const { nav } = useNav()
 let isEdit = $ref(false)
 let isAdd = $ref(false)
 let studyLoading = $ref(false)
+let articleRef = $ref<HTMLDivElement>()
 
 let selectArticle: Article = $ref(getDefaultArticle({ id: -1 }))
 
@@ -180,7 +181,7 @@ const shouldShowInlineTranslation = $computed(() => {
 
 // 定位翻译到原文下方
 function positionTranslations() {
-  if (loading || selectArticle.id === -1) return
+  if (loading.value || selectArticle.id === -1) return
   _nextTick(() => {
     const articleRect = articleWrapperRef.getBoundingClientRect()
     selectArticle.textTranslate.split('\n\n').forEach((paragraph, paraIndex) => {
@@ -211,6 +212,15 @@ watch([() => displayMode, () => selectArticle.id, () => showTranslate], () => {
     positionTranslations()
   }
 })
+
+watch(
+  () => selectArticle.id,
+  () => {
+    _nextTick(() => {
+      articleRef?.scrollTo(0, 0)
+    })
+  }
+)
 </script>
 
 <template>
@@ -260,7 +270,7 @@ watch([() => displayMode, () => selectArticle.id, () => showTranslate], () => {
                 <div class="text-base mt-10" v-if="totalSpend">总学习时长：{{ totalSpend }}</div>
               </template>
               <template v-else>
-                <div class="flex-1 overflow-auto pb-30">
+                <div ref="articleRef" class="flex-1 overflow-auto pb-30">
                   <div>
                     <div class="flex justify-between items-center relative">
                       <span>

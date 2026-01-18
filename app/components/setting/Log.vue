@@ -1,6 +1,10 @@
 <script setup lang="ts">
 let logList = [
   {
+    date: '2026/01/19',
+    content: '文章练习界面添加自动滚动; 修复练习界面，打开设置弹窗事件冲突',
+  },
+  {
     date: '2026/01/16',
     content: '用 Nuxt 重构',
   },

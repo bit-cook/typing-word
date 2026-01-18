@@ -455,7 +455,7 @@ export async function loadJsLib(key: string, url: string) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script')
     // 判断是否是 .mjs 文件，如果是，则使用 type="module"
-    if (url.endsWith('.mjs')) {
+    if (url.includes('.mjs')) {
       script.type = 'module' // 需要加上 type="module"
       script.src = url
       script.onload = async () => {

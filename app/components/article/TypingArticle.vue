@@ -118,10 +118,13 @@ watch(
   n => {
     if (n) {
       _nextTick(() => {
-        typeArticleRef?.scrollTo({ top: typeArticleRef.scrollHeight, behavior: 'smooth' })
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth',
+        })
       })
     } else {
-      typeArticleRef?.scrollTo({ top: 0, behavior: 'smooth' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 )
@@ -129,7 +132,6 @@ watch(
 function init() {
   if (!props.article.id) return
   isSpace = isEnd = false
-
   let d = getPracticeArticleCache()
   if (d) {
     sectionIndex = d.practiceData.sectionIndex
@@ -151,7 +153,7 @@ function init() {
         })
       })
     })
-    typeArticleRef?.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0 })
   }
   _nextTick(() => {
     emit('play', { sentence: props.article.sections[sectionIndex][sentenceIndex], handle: false })
@@ -175,10 +177,20 @@ function checkCursorPosition(a = sectionIndex, b = sentenceIndex, c = wordIndex)
         // 获取 articleWrapper 的位置
         const articleRect = articleWrapperRef.getBoundingClientRect()
         const endRect = end.getBoundingClientRect()
-        //如果当前输入位置大于屏幕的0.7高度，就滚动屏幕的1/3
-        if (endRect.y > window.innerHeight * 0.7) {
-          typeArticleRef?.scrollTo({
-            top: typeArticleRef.scrollTop + window.innerHeight * 0.3,
+        // 判断元素是否在视口内
+        const isInViewport = endRect.top >= 0 && endRect.top <= window.innerHeight
+        if (isInViewport) {
+          // 如果在视口内且位置大于屏幕的0.7高度，就滚动屏幕的1/3
+          if (endRect.y > window.innerHeight * 0.7) {
+            window.scrollTo({
+              top: document.documentElement.scrollTop + window.innerHeight * 0.3,
+              behavior: 'smooth',
+            })
+          }
+        } else {
+          // 如果不在视口内，滚动到屏幕中间
+          window.scrollTo({
+            top: document.documentElement.scrollTop + endRect.top - window.innerHeight / 2,
             behavior: 'smooth',
           })
         }
@@ -813,7 +825,7 @@ $article-lh: 2.4;
   color: var(--color-article);
   width: var(--article-width);
   font-size: 1.6rem;
-  margin-bottom: 10rem;
+  margin-bottom: 20rem;
 
   .mobile-input {
     position: absolute;

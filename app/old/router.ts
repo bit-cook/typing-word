@@ -2,7 +2,7 @@
 // import {RouteRecordRaw} from 'vue-router'
 // import Layout from "@/layout/default.vue";
 // import words from "@/pages/(words)/words.vue";
-// import DictDetail from "@/pages/(words)/dict-detail.vue";
+// import DictDetail from "@/pages/(words)/dict.vue";
 // import DictList from "@/pages/(words)/dict-list.vue";
 // import PracticeWords from "@/pages/(words)/practice-words/[id].vue";
 // import WordTest from "@/pages/(words)/words-test/[id].vue";

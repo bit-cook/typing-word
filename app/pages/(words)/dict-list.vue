@@ -31,7 +31,7 @@ function selectDict(e) {
 
 async function getDictDetail(val: DictResource) {
   runtimeStore.editDict = getDefaultDict(val)
-  nav('dict-detail', {from: 'list'})
+  nav('/dict', {from: 'list'})
 }
 
 
