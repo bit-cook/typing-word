@@ -65,7 +65,7 @@ class ChatPanel {
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
 		const websiteUrl = 'https://typewords.cc';
-		const cdnUrl = 'https://type-words-4n6djfw59l.edgeone.cool';
+		const cdnUrl = 'https://441bee76.typewords-c3i.pages.dev';
 
 		return `<!DOCTYPE html>
 			<html lang="zh-CN" style="width: 100%!important; height: 100%!important;">
@@ -77,16 +77,16 @@ class ChatPanel {
 			</head>
 			<body>
 			<div id="app"></div>
-				  <script type="module" crossorigin src="
-https://type-words-4n6djfw59l.edgeone.cool/vscode/assets/index-C0HjsgId.js"></script>
+			  <script type="module" crossorigin src="
+https://441bee76.typewords-c3i.pages.dev/vscode/assets/index-CbprgzOC.js"></script>
   <link rel="modulepreload" crossorigin href="
-https://type-words-4n6djfw59l.edgeone.cool/vscode/assets/icons-DVb7W-0B.js">
+https://441bee76.typewords-c3i.pages.dev/vscode/assets/icons-DVb7W-0B.js">
   <link rel="modulepreload" crossorigin href="
-https://type-words-4n6djfw59l.edgeone.cool/vscode/assets/utils-Bkoc15Tl.js">
+https://441bee76.typewords-c3i.pages.dev/vscode/assets/utils-Bkoc15Tl.js">
   <link rel="stylesheet" crossorigin href="
-https://type-words-4n6djfw59l.edgeone.cool/vscode/assets/utils-pqXEIRJB.css">
+https://441bee76.typewords-c3i.pages.dev/vscode/assets/utils-pqXEIRJB.css">
   <link rel="stylesheet" crossorigin href="
-https://type-words-4n6djfw59l.edgeone.cool/vscode/assets/index-D4BRJAZe.css">
+https://441bee76.typewords-c3i.pages.dev/vscode/assets/index-D4BRJAZe.css">
 			</body>
 			</html>`;
 	}
