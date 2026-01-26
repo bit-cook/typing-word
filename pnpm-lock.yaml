@@ -231,6 +231,9 @@ importers:
       vue:
         specifier: ^3.5.17
         version: 3.5.26(typescript@5.9.3)
+      vue-i18n:
+        specifier: ^11.2.8
+        version: 11.2.8(vue@3.5.26(typescript@5.9.3))
       vue-router:
         specifier: ^4.5.1
         version: 4.6.4(vue@3.5.26(typescript@5.9.3))
@@ -361,6 +364,9 @@ importers:
       unocss:
         specifier: ^66.4.0
         version: 66.6.0(@unocss/webpack@66.6.0(webpack@5.104.1(esbuild@0.27.2)))(postcss@8.5.6)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(sass@1.97.2)(terser@5.46.0)(yaml@2.8.2))
+      unplugin-auto-import:
+        specifier: ^21.0.0
+        version: 21.0.0(@nuxt/kit@4.2.2(magicast@0.5.1))(@vueuse/core@14.0.0-alpha.0(vue@3.5.26(typescript@5.9.3)))
       unplugin-icons:
         specifier: ^22.2.0
         version: 22.5.0(@vue/compiler-sfc@3.5.26)
@@ -7063,6 +7069,18 @@ packages:
       '@unocss/webpack':
         optional: true
       vite:
+        optional: true
+
+  unplugin-auto-import@21.0.0:
+    resolution: {integrity: sha512-vWuC8SwqJmxZFYwPojhOhOXDb5xFhNNcEVb9K/RFkyk/3VnfaOjzitWN7v+8DEKpMjSsY2AEGXNgt6I0yQrhRQ==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@nuxt/kit': ^4.0.0
+      '@vueuse/core': '*'
+    peerDependenciesMeta:
+      '@nuxt/kit':
+        optional: true
+      '@vueuse/core':
         optional: true
 
   unplugin-combine@1.2.1:
@@ -15270,6 +15288,18 @@ snapshots:
     transitivePeerDependencies:
       - postcss
       - supports-color
+
+  unplugin-auto-import@21.0.0(@nuxt/kit@4.2.2(magicast@0.5.1))(@vueuse/core@14.0.0-alpha.0(vue@3.5.26(typescript@5.9.3))):
+    dependencies:
+      local-pkg: 1.1.2
+      magic-string: 0.30.21
+      picomatch: 4.0.3
+      unimport: 5.6.0
+      unplugin: 2.3.11
+      unplugin-utils: 0.3.1
+    optionalDependencies:
+      '@nuxt/kit': 4.2.2(magicast@0.5.1)
+      '@vueuse/core': 14.0.0-alpha.0(vue@3.5.26(typescript@5.9.3))
 
   unplugin-combine@1.2.1(esbuild@0.27.2)(rollup@4.55.1)(unplugin@1.16.1)(vite@7.3.1(@types/node@25.0.9)(jiti@2.6.1)(sass@1.97.2)(terser@5.46.0)(yaml@2.8.2))(webpack@5.104.1(esbuild@0.27.2)):
     optionalDependencies:

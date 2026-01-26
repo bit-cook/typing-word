@@ -1,21 +1,22 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import Vue from '@vitejs/plugin-vue'
-import VueJsx from "@vitejs/plugin-vue-jsx";
-import {resolve} from 'path'
-import {visualizer} from "rollup-plugin-visualizer";
-import {getLastCommit} from "git-last-commit";
+import VueJsx from '@vitejs/plugin-vue-jsx'
+import { resolve } from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
+import { getLastCommit } from 'git-last-commit'
 import UnoCSS from 'unocss/vite'
 import VueMacros from 'unplugin-vue-macros/vite'
 import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import IconsResolver from 'unplugin-icons/resolver'
-import {viteExternalsPlugin} from 'vite-plugin-externals'
+import { viteExternalsPlugin } from 'vite-plugin-externals'
+import AutoImport from 'unplugin-auto-import/vite'
 
 function pathResolve(dir: string) {
-  return resolve(__dirname, ".", dir)
+  return resolve(__dirname, '.', dir)
 }
 
-const lifecycle = process.env.npm_lifecycle_event;
+const lifecycle = process.env.npm_lifecycle_event
 let isCdnBuild = ['build-oss', 'report-oss'].includes(lifecycle)
 let isAnalyseBuild = ['report-oss', 'report'].includes(lifecycle)
 
@@ -26,6 +27,12 @@ export default defineConfig(() => {
       if (!err) latestCommitHash = commit.shortHash
       resolve({
         plugins: [
+          AutoImport({
+            imports: [
+              'vue',
+            ],
+            dts: 'src/auto-imports.d.ts'
+          }),
           Icons({
             autoInstall: true,
             compiler: 'vue3',
@@ -44,79 +51,83 @@ export default defineConfig(() => {
             },
           }),
           UnoCSS(),
-          isAnalyseBuild ?
-            visualizer({
-              gzipSize: true,
-              brotliSize: true,
-              emitFile: false,
-              filename: "report.html",
-              open: true
-            }) : null,
-          isCdnBuild ? [
-            {
-              name: 'inject-cdn-head',
-              enforce: 'pre',
-              transformIndexHtml(html) {
-                const scripts = `
+          isAnalyseBuild
+            ? visualizer({
+                gzipSize: true,
+                brotliSize: true,
+                emitFile: false,
+                filename: 'report.html',
+                open: true,
+              })
+            : null,
+          isCdnBuild
+            ? [
+                {
+                  name: 'inject-cdn-head',
+                  enforce: 'pre',
+                  transformIndexHtml(html) {
+                    const scripts = `
 <script src="./libs/vue.global.prod.min.js" crossorigin="anonymous"></script>
 <script src="./libs/vue-router.global.prod.min.js" crossorigin="anonymous"></script>
 <script src="./libs/axios.min.js" crossorigin="anonymous"></script>
 `
-                return html.replace('<head>', `<head>${scripts}`)
-              },
-            },
-            viteExternalsPlugin({
-              vue: 'Vue',
-              'vue-router': 'VueRouter',
-              axios: 'axios',
-            })
-          ] : null,
+                    return html.replace('<head>', `<head>${scripts}`)
+                  },
+                },
+                viteExternalsPlugin({
+                  vue: 'Vue',
+                  'vue-router': 'VueRouter',
+                  axios: 'axios',
+                }),
+              ]
+            : null,
         ],
         build: {
           rollupOptions: {
             output: {
               manualChunks(id) {
                 if (id.includes('node_modules/@iconify') || id.includes('~icons')) {
-                  return 'icons';
+                  return 'icons'
                 }
-                if (id.includes('utils')
-                  || id.includes('hooks')
-                ) {
+                if (id.includes('utils') || id.includes('hooks')) {
                   return 'utils'
                 }
                 if (!isCdnBuild) return
                 if (id.includes('dialog')) {
                   return 'dialog'
                 }
-              }
-            }
-          }
+              },
+            },
+          },
         },
         define: {
-          LATEST_COMMIT_HASH: JSON.stringify(latestCommitHash + (process.env.NODE_ENV === 'production' ? '' : ' (dev)')),
+          LATEST_COMMIT_HASH: JSON.stringify(
+            latestCommitHash + (process.env.NODE_ENV === 'production' ? '' : ' (dev)')
+          ),
         },
         base: './',
         resolve: {
           alias: {
-            "@": pathResolve("src"),
+            '@': pathResolve('src'),
+            '~': pathResolve('src'),
           },
-          extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue']
+          extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
         },
         css: {
           preprocessorOptions: {
             scss: {
-              api: "modern-compiler"
-            }
-          }
+              api: 'modern-compiler',
+            },
+          },
         },
         server: {
           port: 3000,
           open: false,
           host: '0.0.0.0',
           proxy: {
-            '/baidu': 'https://api.fanyi.baidu.com/api/trans/vip/translate'
-          }
-        }
+            '/baidu': 'https://api.fanyi.baidu.com/api/trans/vip/translate',
+          },
+        },
       })
     })
   })

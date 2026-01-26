@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
-import { getWebviewHtml } from './webview-template'
 
 // WebviewPanel 管理类
 class ChatPanel {
@@ -78,7 +77,8 @@ class ChatPanel {
       `style-src ${cdnUrl} 'unsafe-inline'`,
       `connect-src ${cdnUrl} ${websiteUrl}`,
       "img-src data: https:",
-      "font-src data:"
+      "font-src data:",
+      `connect-src 'https://typewords.cc' 'http://tw.cc' 'vscode-webview:'`
     ].join('; ')
     
     return `<!DOCTYPE html>
@@ -89,21 +89,21 @@ class ChatPanel {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>单词练习</title>
 
-    <link rel="stylesheet" href="${cdnUrl}/_nuxt/entry.EYAiiZOw.css" crossorigin>
-    <link rel="modulepreload" as="script" crossorigin href="${cdnUrl}/_nuxt/B-9LXoVf.js">
-    <script type="module" nonce="${nonce}" src="${cdnUrl}/_nuxt/B-9LXoVf.js" crossorigin></script>
+    <link rel="stylesheet" href="${cdnUrl}/_nuxt/entry.BovBCbfE.css" crossorigin>
+    <link rel="modulepreload" as="script" crossorigin href="${cdnUrl}/_nuxt/mU60VWDl.js">
+    <script type="module" nonce="${nonce}" src="${cdnUrl}/_nuxt/mU60VWDl.js" crossorigin></script>
 </head>
 <body>
     <div id="__nuxt"></div>
     <div id="teleports"></div>
     <script nonce="${nonce}">
        var __NUXT__ = {};
-        var __NUXT__.config = {
+       __NUXT__.config = {
             public: {
                 apiBase: "http://localhost/",
                 origin: "https://typewords.cc",
                 host: "typewords.cc",
-                latestCommitHash: "42a6546e",
+                latestCommitHash: "d1f8e28c",
                 i18n: {
                     baseUrl: "",
                     defaultLocale: "zh",
@@ -166,18 +166,17 @@ class ChatPanel {
                         tw: { domain: "" }
                     }
                 }
-            },
-            app: {
-                baseURL: "/",
-                buildId: "809b8406-d0f8-433d-b54c-d7f2672c5891",
-                buildAssetsDir: "/_nuxt/",
-                cdnURL: ""
-            }
+             }, app: {baseURL: "/", buildId: "3d6cd113-05d1-4810-b754-2d10a3b15f83", buildAssetsDir: "/_nuxt/", cdnURL: ""}
         }
     </script>
-    <script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">
-        [{"prerenderedAt":1,"serverRendered":2},1769417573792,false]
-    </script>
+<script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">[
+  {
+    "prerenderedAt": 1,
+    "serverRendered": 2
+  },
+  1769442962057,
+  false
+]</script>
 </body>
 </html>`
   }

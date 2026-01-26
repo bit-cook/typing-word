@@ -1,4 +1,13 @@
 declare global {
+  // Nuxt API
+  function useHead(arg?: any): void
+  function definePageMeta(arg?: any): void
+
+  // Vue Composition API（Nuxt 自动导入的那批）
+  function onMounted(fn: (...args: any[]) => any): void
+  function onUnmounted(fn: (...args: any[]) => any): void
+  function onBeforeMount(fn: (...args: any[]) => any): void
+
   interface Console {
     parse(v: any): void
 
