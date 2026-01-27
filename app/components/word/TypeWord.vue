@@ -331,10 +331,14 @@ async function onTyping(e: KeyboardEvent) {
 }
 
 function shouldRepeat() {
-  if (settingStore.repeatCount == 100) {
-    return settingStore.repeatCustomCount > wordRepeatCount + 1;
+  if (settingStore.wordPracticeType === WordPracticeType.FollowWrite) {
+    if (settingStore.repeatCount == 100) {
+      return settingStore.repeatCustomCount > wordRepeatCount + 1;
+    } else {
+      return settingStore.repeatCount > wordRepeatCount + 1;
+    }
   } else {
-    return settingStore.repeatCount > wordRepeatCount + 1;
+    return false;
   }
 }
 
