@@ -8,11 +8,6 @@
     "test": "",
     "generate": "nuxt generate && node scripts/do.js && node scripts/copyDist.js",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "sitemap": "node scripts/do.js",
-    "build-tsc": "vue-tsc && vite build",
-    "report": "vite build",
-    "report-oss": "vite build",
-    "commit": "git-cz"
+    "sitemap": "node scripts/do.js"
   }
 }

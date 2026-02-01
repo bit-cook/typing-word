@@ -5,8 +5,7 @@
     "generate": "pnpm -F @typewords/nuxt generate",
     "build-vscode-web": "pnpm -F @typewords/vscode-web build",
     "build-all": "pnpm run generate && pnpm run build:vscode-web",
-    "test": "",
-    "prepare": "node -e \"const skip = process.env.CI === 'true' || process.env.HUSKY === '0' || process.env.HUSKY_SKIP_INSTALL === '1'; if (!skip) require('child_process').execSync('husky install', { stdio: 'inherit' })\""
+    "test": ""
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.4",
