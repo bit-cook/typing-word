@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { useSettingStore } from './setting'
-import {WordPracticeStage} from "@/types/enum.ts";
-import { WordPracticeModeStageMap, WordPracticeStageNameMap } from '@/config/env.ts'
+import { WordPracticeStage } from '@/types/enum'
+import { WordPracticeModeStageMap, WordPracticeStageNameMap } from '@/config/env'
 
 export interface PracticeState {
   stage: WordPracticeStage
@@ -30,14 +30,14 @@ export const usePracticeStore = defineStore('practice', {
     }
   },
   getters: {
-    getStageName: (state) => {
+    getStageName: state => {
       return WordPracticeStageNameMap[state.stage]
     },
-    nextStage: (state) => {
+    nextStage: state => {
       const settingStore = useSettingStore()
       const stages = WordPracticeModeStageMap[settingStore.wordPracticeMode]
       const index = stages.findIndex(v => v === state.stage)
       return stages[index + 1]
-    }
-  }
+    },
+  },
 })

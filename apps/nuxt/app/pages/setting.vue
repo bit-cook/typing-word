@@ -45,7 +45,7 @@ const config = useRuntimeConfig()
 // console.log('runtimeConfig ',config)
 //@ts-ignore
 // const gitLastCommitHash = ref(LATEST_COMMIT_HASH)
-const gitLastCommitHash = ref(config.public.latestCommitHash)
+const gitLastCommitHash = ref(config?.public?.latestCommitHash)
 
 let editShortcutKey = $ref('')
 

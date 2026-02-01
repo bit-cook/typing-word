@@ -1,9 +1,9 @@
-import { defineStore } from "pinia"
-import { checkAndUpgradeSaveSetting, cloneDeep } from "@/utils";
-import { get } from "idb-keyval";
-import { AppEnv, DefaultShortcutKeyMap, SAVE_SETTING_KEY } from '@/config/env.ts'
+import { defineStore } from 'pinia'
+import { checkAndUpgradeSaveSetting, cloneDeep } from '@/utils'
+import { get } from 'idb-keyval'
+import { AppEnv, DefaultShortcutKeyMap, SAVE_SETTING_KEY } from '@/config/env'
 import { getSetting } from '@/apis'
-import { WordPracticeMode, WordPracticeType } from '@/types/enum.ts'
+import { WordPracticeMode, WordPracticeType } from '@/types/enum'
 
 export interface SettingState {
   soundType: string
@@ -108,7 +108,7 @@ export const getDefaultSettingState = (): SettingState => ({
   autoNextWord: true,
   inputWrongClear: false,
   mobileNavCollapsed: false,
-  ignoreSymbol: true
+  ignoreSymbol: true,
 })
 
 export const useSettingStore = defineStore('setting', {
@@ -129,9 +129,9 @@ export const useSettingStore = defineStore('setting', {
             Object.assign(data, res.data)
           }
         }
-        this.setState({...data, load: true})
+        this.setState({ ...data, load: true })
         resolve(true)
       })
-    }
-  }
+    },
+  },
 })

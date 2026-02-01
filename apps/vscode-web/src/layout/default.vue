@@ -1,28 +1,53 @@
 <script setup lang="ts">
-import { useSettingStore } from '@/stores/setting.ts'
-import { useRouter } from 'vue-router'
-import useTheme from '@/hooks/theme.ts'
 import BaseIcon from '@/components/BaseIcon.vue'
+import Logo from '@/components/Logo.vue'
+import MigrateDialog from '@/components/MigrateDialog.vue'
+import { Origin } from '@/config/env'
+import useTheme from '@/hooks/theme.ts'
+import { useBaseStore } from '@/stores/base'
 import { useRuntimeStore } from '@/stores/runtime.ts'
-import { watch } from 'vue'
+import { useSettingStore } from '@/stores/setting.ts'
 import { ShortcutKey } from '@/types/enum.ts'
+import { onMounted, watch } from 'vue'
+import { useRouter ,useRoute} from 'vue-router'
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+import { useInit } from '@/composables/useInit.ts'
 
-const settingStore = useSettingStore()
-const runtimeStore = useRuntimeStore()
 const router = useRouter()
-const { toggleTheme, getTheme } = useTheme()
+const { toggleTheme, getTheme, setTheme } = useTheme()
+const store = useBaseStore()
+const runtimeStore = useRuntimeStore()
+const settingStore = useSettingStore()
+let expand = $ref(false)
+const init = useInit()
 
-//首页为了seo被剥离出去了，现在是一个静态页面，用nginx 重定向控制对应的跳转
-function goHome() {
-  window.location.href = '/'
+function toggleExpand(n: boolean) {
+  expand = n
+  document.documentElement.style.setProperty('--aside-width', n ? '12rem' : '4.5rem')
 }
-watch(
-  () => settingStore.sideExpand,
-  n => {
-    document.documentElement.style.setProperty('--aside-width', n ? '12rem' : '4.5rem')
-  },
-  { immediate: true }
-)
+
+watch(() => settingStore.sideExpand, toggleExpand)
+
+//迁移数据
+let showTransfer = $ref(false)
+onMounted(() => {
+  toggleExpand(settingStore.sideExpand)
+  setTheme(settingStore.theme)
+
+  if (new URLSearchParams(window.location.search).get('from_old_site') === '1' && location.origin === Origin) {
+    if (localStorage.getItem('__migrated_from_2study_top__')) return
+    setTimeout(() => {
+      showTransfer = true
+    }, 1000)
+  }
+})
+
+const { locales, setLocale } = useI18n()
+const route = useRoute()
+
+const showIcon = $computed(() => {
+  return ['/words', '/articles', '/setting', '/help', '/doc', '/feedback'].includes(route.path)
+})
 </script>
 
 <template>
@@ -30,38 +55,42 @@ watch(
     <!--    第一个aside 占位用-->
     <div class="aside space"></div>
     <div class="aside anim fixed">
-      <div class="top">
-        <div class="row" @click="router.push('/words')">
+      <div class="top" :class="!expand && 'hidden-span'">
+        <Logo v-if="expand" />
+        <NuxtLink to="/words" class="row">
           <IconFluentTextUnderlineDouble20Regular />
-          <span v-if="settingStore.sideExpand">单词</span>
-        </div>
-        <div id="article" class="row" @click="router.push('/articles')">
-          <!--          <IconPhArticleNyTimes/>-->
+          <span>{{ $t('words') }}</span>
+        </NuxtLink>
+        <NuxtLink id="article" to="/articles" class="row">
           <IconFluentBookLetter20Regular />
-          <span v-if="settingStore.sideExpand">文章</span>
-        </div>
-        <div class="row" @click="router.push('/setting')">
+          <span>{{ $t('articles') }}</span>
+        </NuxtLink>
+        <NuxtLink to="/setting" class="row">
           <IconFluentSettings20Regular />
-          <span v-if="settingStore.sideExpand">设置</span>
+          <span>{{ $t('setting') }}</span>
           <div class="red-point" :class="!settingStore.sideExpand && 'top-1 right-0'" v-if="runtimeStore.isNew"></div>
-        </div>
+        </NuxtLink>
+        <NuxtLink to="/feedback" class="row">
+          <IconFluentCommentEdit20Regular />
+          <span>{{ $t('feedback') }}</span>
+        </NuxtLink>
+        <NuxtLink to="/doc" class="row">
+          <IconFluentDocument20Regular />
+          <span>{{ $t('document') }}</span>
+        </NuxtLink>
+        <NuxtLink to="/help" class="row">
+          <IconFluentQuestionCircle20Regular />
+          <span>{{ $t('help') }}</span>
+        </NuxtLink>
         <!--        <div class="row" @click="router.push('/user')">-->
         <!--          <IconFluentPerson20Regular/>-->
-        <!--          <span v-if="settingStore.sideExpand">用户</span>-->
+        <!--          <span >用户</span>-->
         <!--        </div>-->
       </div>
       <div class="bottom flex justify-evenly">
         <BaseIcon @click="settingStore.sideExpand = !settingStore.sideExpand">
-          <IconFluentChevronLeft20Filled v-if="settingStore.sideExpand" />
+          <IconFluentChevronLeft20Filled v-if="expand" />
           <IconFluentChevronLeft20Filled class="transform-rotate-180" v-else />
-        </BaseIcon>
-        <BaseIcon
-          v-if="settingStore.sideExpand"
-          :title="`切换主题(${settingStore.shortcutKeyMap[ShortcutKey.ToggleTheme]})`"
-          @click="toggleTheme"
-        >
-          <IconFluentWeatherMoon16Regular v-if="getTheme() === 'light'" />
-          <IconFluentWeatherSunny16Regular v-else />
         </BaseIcon>
       </div>
     </div>
@@ -69,19 +98,19 @@ watch(
     <!-- 移动端顶部菜单栏 -->
     <div class="mobile-top-nav" :class="{ collapsed: settingStore.mobileNavCollapsed }">
       <div class="nav-items">
-        <div class="nav-item" @click="router.push('/')" :class="{ active: $route.path === '/' }">
+        <div class="nav-item" @click="router.push('/')" :class="{ active: route.path === '/' }">
           <IconFluentHome20Regular />
           <span>主页</span>
         </div>
-        <div class="nav-item" @click="router.push('/words')" :class="{ active: $route.path.includes('/words') }">
+        <div class="nav-item" @click="router.push('/words')" :class="{ active: route.path?.includes('/words') }">
           <IconFluentTextUnderlineDouble20Regular />
           <span>单词</span>
         </div>
-        <div class="nav-item" @click="router.push('/articles')" :class="{ active: $route.path.includes('/articles') }">
+        <div class="nav-item" @click="router.push('/articles')" :class="{ active: route.path?.includes('/articles') }">
           <IconFluentBookLetter20Regular />
           <span>文章</span>
         </div>
-        <div class="nav-item" @click="router.push('/setting')" :class="{ active: $route.path === '/setting' }">
+        <div class="nav-item" @click="router.push('/setting')" :class="{ active: route.path === '/setting' }">
           <IconFluentSettings20Regular />
           <span>设置</span>
           <div class="red-point" v-if="runtimeStore.isNew"></div>
@@ -93,8 +122,37 @@ watch(
       </div>
     </div>
 
+    <MigrateDialog v-model="showTransfer" @ok="init" />
+
+    <IeDialog />
+
     <div class="flex-1 z-1 relative main-content overflow-x-hidden">
+      <!--      <slot></slot>-->
       <router-view></router-view>
+      <div class="absolute right-4 top-4 flex z-1 gap-2" v-if="showIcon">
+        <div class="relative group">
+          <BaseIcon>
+            <IconPhTranslate />
+          </BaseIcon>
+          <div
+            class="space-y-2 pt-2 absolute z-2 right-0 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-150 pointer-events-none group-hover:pointer-events-auto"
+          >
+            <div class="card mb-2 py-4 px-6 space-y-3">
+              <div v-for="locale in locales" @click="setLocale(locale.code)" class="w-full cp break-keep black-link">
+                {{ locale.name }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <BaseIcon
+          :title="`${$t('toggle_theme')}(${settingStore.shortcutKeyMap[ShortcutKey.ToggleTheme]})`"
+          @click="toggleTheme"
+        >
+          <IconFluentWeatherMoon16Regular v-if="getTheme() === 'light'" />
+          <IconFluentWeatherSunny16Regular v-else />
+        </BaseIcon>
+      </div>
     </div>
   </div>
 </template>
@@ -119,22 +177,22 @@ watch(
   width: var(--aside-width);
   z-index: 2;
 
-  .row {
-    @apply cursor-pointer rounded-md  text p-2 my-2 flex items-center gap-2 relative shrink-0;
-    transition: all 0.5s;
-
-    &:hover {
-      background: var(--btn-primary);
-      color: white;
-    }
-
+  .hidden-span {
     span {
-      flex-shrink: 0;
+      display: none;
+    }
+  }
+  .row {
+    @apply cp rounded-md text p-2 my-2 flex items-center gap-2 relative shrink-0 hover:bg-fourth;
+    transition: all 0.5s;
+    color: var(--color-main-text);
+
+    &.router-link-active {
+      background: var(--color-fourth);
     }
 
     svg {
-      flex-shrink: 0;
-      font-size: 1.3rem !important;
+      @apply shrink-0 text-lg;
     }
   }
 }

@@ -1,15 +1,15 @@
-import {defineStore} from "pinia"
-import type {Dict} from "@/types/types";
-import {getDefaultDict} from "@/types/func";
+import { defineStore } from 'pinia'
+import type { Dict } from '@/types/types'
+import { getDefaultDict } from '@/types/func'
 
 export interface RuntimeState {
-  disableEventListener: boolean,
-  modalList: Array<{ id: string | number, close: Function }>
+  disableEventListener: boolean
+  modalList: Array<{ id: string | number; close: Function }>
   editDict: Dict
   showDictModal: boolean
   excludeRoutes: any[]
-  routeData: any,
-  isNew: boolean,
+  routeData: any
+  isNew: boolean
 }
 
 export const useRuntimeStore = defineStore('runtime', {
@@ -39,5 +39,5 @@ export const useRuntimeStore = defineStore('runtime', {
       }
       // console.log('store.excludeRoutes', this.excludeRoutes)
     },
-  }
+  },
 })
