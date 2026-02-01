@@ -14,9 +14,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.17.1",
-  "dependencies": {
-    "@typewords/utils": "workspace:*",
-    "@typewords/hooks": "workspace:*"
-  }
+  "packageManager": "pnpm@10.17.1"
 }
