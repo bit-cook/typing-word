@@ -462,11 +462,11 @@ const systemPracticeText = $computed(() => {
               </BaseButton>
               <BaseButton
                 class="w-full"
-                v-if="settingStore.wordPracticeMode !== WordPracticeMode.WordsTest""
-                :disabled="!currentStudy.review.length && !currentStudy.write.length"
+                v-if="settingStore.wordPracticeMode !== WordPracticeMode.WordsTest"
+                :disabled="!store.sdict.length"
                 @click="startWordsTest()"
               >
-                {{ $t('words_test') }}
+                {{ $t('words') }}{{ $t('test') }}
               </BaseButton>
 
               <!--              <BaseButton-->
