@@ -41,7 +41,7 @@ watch(() => model.value, (n) => {
           @ok="emit('ok',num)">
     <div class="w-120 color-main">
       <div class="flex gap-4 items-end mb-2">
-        <span>随机{{ wordPracticeMode }}：<span class="font-bold">{{ store.sdict.name }}</span></span>
+        <span>{{ wordPracticeMode }}：<span class="font-bold">{{ store.sdict.name }}</span></span>
         <span class="target-number">{{ num }}</span>个单词
       </div>
       <div class="flex gap-space">
